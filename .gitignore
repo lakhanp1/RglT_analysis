@@ -1,0 +1,11 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.pptx
+*.xlsx
+/data
+/analysis
+#/data/
+!/data/referenceData/
+*.log
