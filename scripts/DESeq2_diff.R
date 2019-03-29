@@ -23,12 +23,12 @@ source("E:/Chris_UM/GitHub/omics_util/RNAseq_scripts/DESeq2_functions.R")
 
 analysisName <- "5A9_AA_vs_CEA17_AA"
 
-file_sampleInfo <- here::here("RNAseq_data", "sampleInfo.txt")
+file_sampleInfo <- here::here("analysis", "RNAseq_data", "sampleInfo.txt")
 
 ## the denominator or WT in log2(fold_change) should be second
 compare <- c("5A9_AA", "CEA17_AA")
 
-outDir <- here::here("RNAseq_data", analysisName)
+outDir <- here::here("analysis", "RNAseq_data", analysisName)
 outPrefix <- paste(outDir, analysisName, sep = "/")
 
 file_geneInfo <- "E:/Chris_UM/Database/A_fumigatus_293_version_s03-m05-r06/A_fumigatus_Af293_version_s03-m05-r09_geneInfo.tab"
@@ -86,7 +86,7 @@ design <- ~ condition
 
 
 ## import raw counts data and run DESeq2
-file_rawCounts <- here::here("RNAseq_data", "MatrixCountsPerGeneBySample.txt")
+file_rawCounts <- here::here("analysis", "RNAseq_data", "MatrixCountsPerGeneBySample.txt")
 
 countsDf <- suppressMessages(readr::read_tsv(file = file_rawCounts, col_names = T)) %>%
   as.data.frame()

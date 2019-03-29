@@ -7,7 +7,7 @@ library(BSgenome.Afumigatus.AspGD.Af293)
 
 rm(list = ls())
 
-outDir <- here::here("ChIPseq_analysis", "peak_targets")
+outDir <- here::here("analysis", "ChIPseq_analysis", "peak_targets")
 
 if(!dir.exists(outDir)){
   dir.create(path = outDir)
@@ -22,7 +22,7 @@ file_genes <- "E:/Chris_UM/Database/A_fumigatus_293_version_s03-m05-r06/A_fumiga
 TF_dataPath <- here::here("data", "TF_data")
 
 sampleList <- c("CREEHA_CONTROL4", "CREEHA_CONTROL5", "CREEHA_10MMAA4", "CREEHA_10MMAA5")
-file_targets <- here::here("ChIPseq_analysis", "peak_targets", "peak_targets.common.all.curated.tab")
+file_targets <- here::here("analysis", "ChIPseq_analysis", "peak_targets", "peak_targets.common.all.curated.tab")
 
 ##################################################################################
 

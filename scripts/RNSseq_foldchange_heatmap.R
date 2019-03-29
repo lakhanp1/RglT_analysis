@@ -21,7 +21,7 @@ compare <- c("Day5", "Day5_M")
 
 file_geneList <- "genelist_mmp.txt"
 
-file_sampleInfo <- here::here("RNAseq_data", "sampleInfo.txt")
+file_sampleInfo <- here::here("analysis", "RNAseq_data", "sampleInfo.txt")
 file_geneInfo <- "E:/Chris_UM/Database/A_fumigatus_293_version_s03-m05-r06/A_fumigatus_Af293_version_s03-m05-r09_geneInfo.tab"
 rldFile <- "E:/Chris_UM/Analysis/CoreData/14_ZhuBo_RNASeq/Day5_vs_Day5_M_diff/Day5_vs_Day5_M_rlogCounts.tab"
 outPrefix <- "genes_mmp"

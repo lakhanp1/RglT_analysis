@@ -15,8 +15,8 @@ source("E:/Chris_UM/GitHub/omics_util/RNAseq_scripts/DESeq2_functions.R")
 
 analysisName <- "creE_del_AA_effect"
 
-outDir <- here::here("RNAseq_data", analysisName)
-file_sampleInfo <- here::here("RNAseq_data", "sampleInfo.txt")
+outDir <- here::here("analysis", "RNAseq_data", analysisName)
+file_sampleInfo <- here::here("analysis", "RNAseq_data", "sampleInfo.txt")
 
 outPrefix <- paste(outDir, analysisName, sep = "/")
 
@@ -79,7 +79,7 @@ design <- ~ genotype + treatment + genotype:treatment
 
 
 ## import raw counts data and run DESeq2
-file_rawCounts <- here::here("RNAseq_data", "MatrixCountsPerGeneBySample.txt")
+file_rawCounts <- here::here("analysis", "RNAseq_data", "MatrixCountsPerGeneBySample.txt")
 
 countsDf <- suppressMessages(readr::read_tsv(file = file_rawCounts, col_names = T)) %>%
   as.data.frame()

@@ -4,7 +4,7 @@ library(org.AFumigatus293.eg.db)
 
 rm(list = ls())
 
-outDir <- here::here("integration_analysis", "ChIPseq_RNAseq_heatmap")
+outDir <- here::here("analysis", "integration_analysis", "ChIPseq_RNAseq_heatmap")
 
 if(!dir.exists(outDir)){
   dir.create(path = outDir)
@@ -13,7 +13,7 @@ if(!dir.exists(outDir)){
 ##################################################################################
 orgDb <- org.AFumigatus293.eg.db
 
-file_targets <- here::here("ChIPseq_analysis", "peak_targets", "peak_targets.curated.filtered.tab")
+file_targets <- here::here("analysis", "ChIPseq_analysis", "peak_targets", "peak_targets.curated.filtered.tab")
 file_exptInfo <- here::here("data", "referenceData/sampleInfo.txt")
 TF_dataPath <- here::here("data", "TF_data")
 chipSamples <- c("CREEHA_CONTROL4", "CREEHA_CONTROL5", "CREEHA_10MMAA4", "CREEHA_10MMAA5")
@@ -33,8 +33,8 @@ file_deseq2 <- purrr::map_dfr(
   .f = function(x){
     list(
       diffPair = x,
-      file_diff = here::here("RNAseq_data", x, paste(x, ".DESeq2.tab", sep = "")),
-      file_rld = here::here("RNAseq_data", x, paste(x, ".rlogCounts.tab", sep = ""))
+      file_diff = here::here("analysis", "RNAseq_data", x, paste(x, ".DESeq2.tab", sep = "")),
+      file_rld = here::here("analysis", "RNAseq_data", x, paste(x, ".rlogCounts.tab", sep = ""))
     )
   })
 

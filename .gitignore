@@ -4,8 +4,8 @@
 .Ruserdata
 *.pptx
 *.xlsx
-/data
-/analysis
+/data/*
 #/data/
 !/data/referenceData/
+/analysis
 *.log

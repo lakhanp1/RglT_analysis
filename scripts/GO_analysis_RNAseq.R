@@ -6,7 +6,7 @@ rm(list = ls())
 
 source(file = "E:/Chris_UM/GitHub/omics_util/GO_enrichment/topGO_functions.R")
 
-outDir <- here::here("RNAseq_analysis")
+outDir <- here::here("analysis", "RNAseq_analysis")
 
 if(!dir.exists(outDir)){
   dir.create(path = outDir)

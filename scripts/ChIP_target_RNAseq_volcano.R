@@ -15,10 +15,10 @@ analysisName <- "5A9_C_vs_CEA17_C"
 diffPair <- "5A9_C_vs_CEA17_C"
 chipSamples <- c("CREEHA_CONTROL4", "CREEHA_10MMAA4")
 
-file_ChIPtargets <- here::here("ChIPseq_analysis", "peak_targets", "peak_targets.curated.filtered.tab")
-file_degs <- here::here("RNAseq_data", diffPair, "5A9_C_vs_CEA17_C.DEG_all.txt")
+file_ChIPtargets <- here::here("analysis", "ChIPseq_analysis", "peak_targets", "peak_targets.curated.filtered.tab")
+file_degs <- here::here("analysis", "RNAseq_data", diffPair, "5A9_C_vs_CEA17_C.DEG_all.txt")
 
-outDir <- here::here("integration_analysis", "ChIPseq_RNAseq_volcano", analysisName)
+outDir <- here::here("analysis", "integration_analysis", "ChIPseq_RNAseq_volcano", analysisName)
 
 if(!dir.exists(outDir)){
   dir.create(path = outDir)

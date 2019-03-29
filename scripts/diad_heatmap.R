@@ -5,7 +5,7 @@ library(seriation)
 
 rm(list = ls())
 
-outDir <- here::here("ChIPseq_analysis", "motifAnalysis", "rsat_diad_creE_CONTROL_10MMAA_combined")
+outDir <- here::here("analysis", "ChIPseq_analysis", "motifAnalysis", "rsat_diad_creE_CONTROL_10MMAA_combined")
 
 if(!dir.exists(outDir)){
   dir.create(path = outDir)
@@ -15,13 +15,13 @@ outPrefix <- paste(outDir, "/diad_motif_occurrence.all200", sep = "")
 ##################################################################################
 orgDb <- org.AFumigatus293.eg.db
 
-file_diadMatch <- here::here("ChIPseq_analysis", "motifAnalysis", "rsat_diad_creE_CONTROL_10MMAA_combined",
+file_diadMatch <- here::here("analysis", "ChIPseq_analysis", "motifAnalysis", "rsat_diad_creE_CONTROL_10MMAA_combined",
                              "creE_CONTROL_10MMAA_combined.diad_match.tab")
 
-file_peakGroup <- here::here("ChIPseq_analysis", "motifAnalysis", "rsat_diad_creE_CONTROL_10MMAA_combined",
+file_peakGroup <- here::here("analysis", "ChIPseq_analysis", "motifAnalysis", "rsat_diad_creE_CONTROL_10MMAA_combined",
                              "peak_group.txt")
 
-file_diad <- here::here("ChIPseq_analysis", "motifAnalysis", "rsat_diad_creE_CONTROL_10MMAA_combined",
+file_diad <- here::here("analysis", "ChIPseq_analysis", "motifAnalysis", "rsat_diad_creE_CONTROL_10MMAA_combined",
                         "diad_summary.txt")
 
 ##################################################################################

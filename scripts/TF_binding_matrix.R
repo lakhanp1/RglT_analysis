@@ -8,7 +8,7 @@ library(here)
 rm(list = ls())
 
 
-outDir <- here::here("ChIPseq_analysis", "peak_targets")
+outDir <- here::here("analysis", "ChIPseq_analysis", "peak_targets")
 
 
 if(!dir.exists(outDir)){
@@ -29,13 +29,6 @@ TF_dataPath <- here::here("data", "TF_data")
 sampleList <- c("CREEHA_CONTROL4", "CREEHA_CONTROL5", "CREEHA_10MMAA4", "CREEHA_10MMAA5")
 outPrefix <- paste(outDir, "/good_samples", sep = "")
 
-tfCols <- sapply(
-  X = c("hasPeak", "peakId", "peakEnrichment", "peakPval", "peakQval", "peakSummit", "peakDist", "summitDist",
-        "peakType", "bidirectional", "featureCovFrac", "relativeSummitPos", "peakRegion", "peakCoverage",
-        "pvalFiltered"),
-  FUN = function(x){ structure(paste(x, ".", sampleList, sep = ""), names = sampleList) },
-  simplify = F, USE.NAMES = T
-)
 
 ##################################################################################
 
@@ -49,6 +42,14 @@ exptData <- get_sample_information(exptInfoFile = file_exptInfo,
 
 exptDataList <- purrr::transpose(exptData) %>% 
   purrr::set_names(nm = purrr::map(., "sampleId"))
+
+tfCols <- sapply(
+  X = c("hasPeak", "peakId", "peakEnrichment", "peakPval", "peakQval", "peakSummit", "peakDist", "summitDist",
+        "peakType", "bidirectional", "featureCovFrac", "relativeSummitPos", "peakRegion", "peakCoverage",
+        "pvalFiltered"),
+  FUN = function(x){ structure(paste(x, ".", sampleList, sep = ""), names = sampleList) },
+  simplify = F, USE.NAMES = T
+)
 
 ##################################################################################
 ## generate TF binding matrix based on the target genes

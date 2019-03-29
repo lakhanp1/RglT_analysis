@@ -19,7 +19,7 @@ rm(list = ls())
 source("E:/Chris_UM/GitHub/omics_util/RNAseq_scripts/DESeq2_functions.R")
 
 analysisName <- "multi_deg"
-outDir <- here::here("RNAseq_data", "combined_RNAseq")
+outDir <- here::here("analysis", "RNAseq_data", "combined_RNAseq")
 
 if(!dir.exists(outDir)){
   dir.create(path = outDir)
@@ -27,7 +27,7 @@ if(!dir.exists(outDir)){
 
 outPrefix <- paste(outDir, analysisName, sep = "/")
 
-file_sampleInfo <- here::here("RNAseq_data", "sampleInfo.txt")
+file_sampleInfo <- here::here("analysis", "RNAseq_data", "sampleInfo.txt")
 file_geneInfo <- "E:/Chris_UM/Database/A_fumigatus_293_version_s03-m05-r06/A_fumigatus_Af293_version_s03-m05-r09_geneInfo.tab"
 
 degResults <-  c("CEA17_AA_vs_CEA17_C", "5A9_AA_vs_5A9_C",
@@ -50,8 +50,8 @@ diffFiles <- purrr::map_dfr(
   .f = function(x){
     list(
       diffPair = x,
-      file_diff = here::here("RNAseq_data", x, paste(x, ".DESeq2.tab", sep = "")),
-      file_rld = here::here("RNAseq_data", x, paste(x, ".rlogCounts.tab", sep = ""))
+      file_diff = here::here("analysis", "RNAseq_data", x, paste(x, ".DESeq2.tab", sep = "")),
+      file_rld = here::here("analysis", "RNAseq_data", x, paste(x, ".rlogCounts.tab", sep = ""))
     )
   })
 

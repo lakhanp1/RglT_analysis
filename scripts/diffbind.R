@@ -11,7 +11,7 @@ library(DiffBind)
 
 rm(list = ls())
 
-outDir <- here::here("ChIPseq_analysis", "diffBind")
+outDir <- here::here("analysis", "ChIPseq_analysis", "diffBind")
 
 if(!dir.exists(outDir)){
   dir.create(path = outDir)
@@ -29,9 +29,9 @@ down_cut <- lfc_cut * -1
 ##################################################################################
 orgDb <- org.AFumigatus293.eg.db
 
-file_sampleInfo <- here::here("ChIPseq_analysis", "diffBind", "sampleInfo.txt")
+file_sampleInfo <- here::here("analysis", "ChIPseq_analysis", "diffBind", "sampleInfo.txt")
 file_exptInfo <- here::here("data", "referenceData/sampleInfo.txt")
-file_targets <- here::here("ChIPseq_analysis", "peak_targets", "peak_targets.common.all.curated.tab")
+file_targets <- here::here("analysis", "ChIPseq_analysis", "peak_targets", "peak_targets.common.all.curated.tab")
 
 TF_dataPath <- here::here("data", "TF_data")
 
@@ -71,18 +71,22 @@ groupCols <- sapply(
 ##################################################################################
 ## diffBind analysis
 
-dataDba <- DiffBind::dba(sampleSheet = sampleInfo)
+# dataDba <- DiffBind::dba(sampleSheet = sampleInfo)
+# 
+# plot(dataDba)
+# 
+# countsDba <- DiffBind::dba.count(DBA = dataDba, score = "DBA_SCORE_TMM_MINUS_FULL")
+# 
+# plot(countsDba)
+# 
+# countsDba <- DiffBind::dba.contrast(DBA = countsDba, categories = DBA_CONDITION, minMembers = 2)
+# 
+# diffDba <- DiffBind::dba.analyze(DBA = countsDba, method = DBA_DESEQ2, bReduceObjects = FALSE)
+# 
+# DiffBind::dba.save(DBA = diffDba, file = paste(analysisName, ".dba", sep = ""), dir = outDir, pre = "")
 
-plot(dataDba)
-
-countsDba <- DiffBind::dba.count(DBA = dataDba, score = "DBA_SCORE_TMM_MINUS_FULL", summits = 150)
-
-plot(countsDba)
-
-countsDba <- DiffBind::dba.contrast(DBA = countsDba, categories = DBA_CONDITION, minMembers = 2)
-
-diffDba <- DiffBind::dba.analyze(DBA = countsDba, method = DBA_DESEQ2, bReduceObjects = FALSE)
-DiffBind::dba.save(DBA = diffDba, file = paste(analysisName, ".dba", sep = ""), dir = outDir, pre = "")
+## load DBA object
+diffDba <- DiffBind::dba.load(file = paste(analysisName, ".dba", sep = ""), dir = outDir, pre = "")
 
 plot(diffDba, contrast=1)
 
@@ -94,20 +98,23 @@ diffDf <- dplyr::mutate(diffDf, region = paste(Chr, ":", Start, "-", End, sep = 
 # dba.plotMA(diffDba)
 # dba.plotVolcano(diffDba)
 # dba.plotBox(diffDba)
-# dba.plotHeatmap(diffDba, contrast=1, correlations=FALSE)
-# 
 # dba.overlap(DBA = diffDba, mask = diffDba$masks$All, mode = DBA_OLAP_PEAKS)
 # dba.peakset(DBA = diffDba, consensus = )
+# htDt <- dba.plotHeatmap(diffDba, maxSites = diffDba$totalMerged,
+#                         score = DBA_SCORE_TMM_MINUS_FULL, correlations=FALSE, th = 1)
 
 ##################################################################################
 ## create report table
 
 ## add individual peak information columns
 diffGr <- DiffBind::dba.report(DBA = diffDba, bFlip = TRUE, th = 1)
+mcols(diffGr)$name <- paste("peak_region", 1:length(diffGr), sep = "_")
+
+rtracklayer::export.bed(object = diffGr, con = paste(outPrefix, ".merged_regions.bed", sep = ""),
+                        format = "bed")
 
 ## add overlapping peaks from each sample
 diffRes <- combinatorial_binding_matrix(sampleInfo = exptData, peakRegions = diffGr)
-
 
 ## count of samples which showed macs2 peak under condition1
 diffRes[[unname(groupCols$peakCall[grp1])]] <- purrr::pmap_int(
@@ -153,9 +160,10 @@ diffData <- dplyr::mutate(diffData, peakDiff = paste(peakOccupancy, diffBind, se
                 diffBind, peakOccupancy, peakDiff, starts_with("peakCall."), everything())
 
 
-readr::write_tsv(x = diffData, path = paste(outPrefix, "_all.tab", sep = ""))
+readr::write_tsv(x = diffData, path = paste(outPrefix, ".all.tab", sep = ""))
 
 ##################################################################################
+## diffbind report with target genes
 
 bestGrp1Id <- exptData$sampleId[exptData$groupId == grp1 & exptData$bestRep == 1]
 bestGrp2Id <- exptData$sampleId[exptData$groupId == grp2 & exptData$bestRep == 1]
@@ -178,6 +186,7 @@ s2Targets <- dplyr::select(targetsAll, gene, contains(bestGrp2Id)) %>%
   dplyr::rename(!! as.name(tfCols$targetGene[bestGrp2Id]) := gene)
 
 
+## add peak target information to diffbind result table
 diffAnn <- diffData %>% 
   dplyr::arrange(seqnames, start) %>% 
   dplyr::left_join(y = s1Targets, by = unname(tfCols$peakId[bestGrp1Id])) %>% 
