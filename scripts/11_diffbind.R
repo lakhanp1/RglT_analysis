@@ -216,19 +216,42 @@ diffAnn <- diffData %>%
   dplyr::filter(peakOccupancy != "no_consensus") %>% 
   # dplyr::filter(!peakDiff %in% c("specific:CREEHA_CONTROL:noDiff", "specific:CREEHA_10MMAA:noDiff")) %>% 
   dplyr::mutate(
-    targetMatch = if_else(!! as.name(tfCols$targetGene[bestGrp1Id]) == !! as.name(tfCols$targetGene[bestGrp2Id]),
-                          TRUE, FALSE)
-  ) %>% 
+    targetMatch = if_else(
+      condition = !! as.name(tfCols$targetGene[bestGrp1Id]) == !! as.name(tfCols$targetGene[bestGrp2Id]),
+      true = TRUE, false = FALSE),
+    peakPosMatch = if_else(
+      condition = !! as.name(tfCols$peakPosition[bestGrp1Id]) == !! as.name(tfCols$peakPosition[bestGrp2Id]),
+      true = TRUE, false = FALSE)
+  )
+
+## get consensus geneId. choose appropriate when there is no consensus target gene
+diffAnn <- diffAnn %>% 
   dplyr::mutate(
     geneId = dplyr::case_when(
-      targetMatch ~ !! as.name(tfCols$targetGene[bestGrp1Id]),
-      is.na(!! as.name(tfCols$targetGene[bestGrp1Id])) & is.na(!! as.name(tfCols$targetGene[bestGrp2Id])) ~ "NA",
-      is.na(!! as.name(tfCols$targetGene[bestGrp1Id])) ~ !! as.name(tfCols$targetGene[bestGrp2Id]),
-      is.na(!! as.name(tfCols$targetGene[bestGrp2Id])) ~ !! as.name(tfCols$targetGene[bestGrp1Id]),
-      !!as.name(groupCols$peakCall[grp1]) < 2 ~ !! as.name(tfCols$targetGene[bestGrp2Id]),
-      !!as.name(groupCols$peakCall[grp2]) < 2 ~ !! as.name(tfCols$targetGene[bestGrp1Id]),
-      TRUE ~ "NA"
-    ),
+      peakOccupancy == "specific:CREEHA_CONTROL" ~ !! as.name(tfCols$targetGene[bestGrp1Id]),
+      peakOccupancy == "specific:CREEHA_10MMAA" ~ !! as.name(tfCols$targetGene[bestGrp2Id]),
+      peakOccupancy == "common" & targetMatch ~ !! as.name(tfCols$targetGene[bestGrp1Id]), 
+      TRUE ~ "NA")
+  )
+
+## get consensus peak position. choose appropriate when there is not consensus peakPosition
+diffAnn <- diffAnn %>% 
+  dplyr::mutate(
+    peakPosition = dplyr::case_when(
+      peakOccupancy == "specific:CREEHA_CONTROL" ~ !! as.name(tfCols$peakPosition[bestGrp1Id]),
+      peakOccupancy == "specific:CREEHA_10MMAA" ~ !! as.name(tfCols$peakPosition[bestGrp2Id]),
+      peakOccupancy == "common" & peakPosMatch ~ !! as.name(tfCols$peakPosition[bestGrp1Id]),
+      ## other common peaks
+      peakPosMatch & !! as.name(tfCols$peakPosition[bestGrp1Id]) == "TES" ~ "TES",
+      peakPosMatch & !! as.name(tfCols$peakPosition[bestGrp2Id]) == "TES" ~ "TES",
+      TRUE ~ "NA")
+  )
+
+
+## get bestPval between two samples. this will be used to select best peak pair when a gene has
+## multiple peaks
+diffAnn <- diffAnn %>% 
+  dplyr::mutate(
     bestPval = dplyr::case_when(
       peakOccupancy == "specific:CREEHA_CONTROL" ~ !!as.name(tfCols$peakPval[bestGrp1Id]),
       peakOccupancy == "specific:CREEHA_10MMAA" ~ !!as.name(tfCols$peakPval[bestGrp2Id]),
@@ -238,32 +261,46 @@ diffAnn <- diffData %>%
       peakOccupancy == "common" &
         !!as.name(tfCols$peakPval[bestGrp1Id]) < !!as.name(tfCols$peakPval[bestGrp2Id]) ~
         !!as.name(tfCols$peakPval[bestGrp2Id]),
-      TRUE ~ 0
-    )) %>% 
-  dplyr::select(seqnames, start, end, name, geneId, everything())
+      TRUE ~ 0)
+  )
 
+diffAnn <- diffAnn %>% dplyr::select(seqnames, start, end, name, geneId, peakPosition, everything())
 
 diffAnn$pvalFilteredN <- purrr::pmap_int(
   .l = dplyr::select(diffAnn, starts_with("pvalFiltered.")),
   .f = sum, na.rm = TRUE
 )
 
-readr::write_tsv(x = diffAnn, path = paste(outPrefix, ".annotation.tab", sep = ""))
+readr::write_tsv(x = diffAnn, path = paste(outPrefix, ".all.annotation.tab", sep = ""))
 
 ##################################################################################
-## 
+## final confident diffbind annotation
 
 tf1Specific <- dplyr::filter(
-  .data = diffAnn,
-  !! as.name(groupCols$peakCall[grp1]) == 2 & !! as.name(groupCols$peakCall[grp2]) < 2
-)
+  diffAnn,
+  !! as.name(groupCols$peakCall[grp1]) == 2 & !! as.name(groupCols$peakCall[grp2]) < 2,
+  !is.na(!! as.name(tfCols$peakPosition[bestGrp1Id])))
+
+tf2Specific <- dplyr::filter(
+  diffAnn,
+  !! as.name(groupCols$peakCall[grp2]) == 2 & !! as.name(groupCols$peakCall[grp1]) < 2,
+  !is.na(!! as.name(tfCols$peakPosition[bestGrp2Id])))
 
 
+common <- dplyr::filter(
+  diffAnn,
+  !! as.name(groupCols$peakCall[grp2]) == 2 & !! as.name(groupCols$peakCall[grp1]) == 2,
+  targetMatch, peakPosMatch)
 
 
+finalDiffbind <- dplyr::bind_rows(tf1Specific, tf2Specific, common) %>% 
+  dplyr::group_by(geneId, peakPosition) %>% 
+  dplyr::arrange(desc(bestPval),  .by_group = TRUE) %>%
+  dplyr::slice(1L) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::arrange(seqnames, start)
 
-
-
+readr::write_tsv(x = finalDiffbind, path = paste(outPrefix, ".annotation.filtered.tab", sep = ""))
 
 
 
