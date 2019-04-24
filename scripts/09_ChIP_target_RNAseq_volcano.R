@@ -1,5 +1,4 @@
 library(chipmine)
-library(ComplexHeatmap)
 library(org.AFumigatus293.eg.db)
 library(ggpubr)
 library(ggrepel)
@@ -7,7 +6,7 @@ library(cowplot)
 
 
 rm(list = ls())
-source("E:/Chris_UM/GitHub/omics_util/RNAseq_scripts/DESeq2_functions.R")
+# source("E:/Chris_UM/GitHub/omics_util/RNAseq_scripts/DESeq2_functions.R")
 source(file = "E:/Chris_UM/GitHub/omics_util/GO_enrichment/topGO_functions.R")
 
 

@@ -25,8 +25,6 @@ file_targets <- here::here("analysis", "ChIPseq_analysis", "peak_targets", "peak
 orgDb <- org.AFumigatus293.eg.db
 ##################################################################################
 
-genesDf = data.table::fread(file = file_genes, sep = "\t", header = F, select = c(4), col.names = c("gene"), stringsAsFactors = F)
-
 ## get the sample details
 exptData <- get_sample_information(exptInfoFile = file_exptInfo,
                                    samples = sampleList,

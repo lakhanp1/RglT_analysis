@@ -52,13 +52,13 @@ for(i in 1:nrow(tfInfo)){
                                 output = tfInfo$narrowpeakAnno[i])
   
   
-  tfDf <- preProcess_macs2_results(sampleId = tfInfo$sampleId[i],
-                                   peakAnnotation = tfInfo$narrowpeakAnno[i],
-                                   cdsFile = file_genes,
-                                   peakFile = tfInfo$narrowpeakFile[i],
-                                   bwFile = tfInfo$bwFile[i],
-                                   outFile = tfInfo$tfPeakFile[i],
-                                   bindingInGene = FALSE)
+  tfDf <- gene_level_peak_annotation(sampleId = tfInfo$sampleId[i],
+                                     peakAnnotation = tfInfo$narrowpeakAnno[i],
+                                     cdsFile = file_genes,
+                                     peakFile = tfInfo$narrowpeakFile[i],
+                                     bwFile = tfInfo$bwFile[i],
+                                     outFile = tfInfo$peakTargetFile[i],
+                                     bindingInGene = FALSE)
   
   
 }

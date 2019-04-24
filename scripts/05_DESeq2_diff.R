@@ -174,21 +174,21 @@ pointCol <- base::structure(RColorBrewer::brewer.pal(n = length(unique(pcaData$c
 
 
 p1 <- ggplot(pcaData, aes(x = PC1, y = PC2)) +
-  geom_point(mapping = aes(color = condition), size=4) +
-  geom_text_repel(mapping = aes(label = name), size = 3, point.padding = 0.5) +
+  geom_point(mapping = aes(color = condition), size=10, alpha = 0.8) +
+  # geom_text_repel(mapping = aes(label = name), size = 3, point.padding = 0.5) +
   geom_hline(yintercept = 0, linetype = 2) + 
   geom_vline(xintercept = 0, linetype = 2) +
   xlab(paste0("PC1: ",percentVar[1],"% variance")) +
   ylab(paste0("PC2: ",percentVar[2],"% variance")) + 
-  scale_color_manual(values = pointCol) +
+  scale_color_manual(values = pointCol, name = "Condition") +
   ggtitle(pltTitle) + 
+  guides(color = guide_legend(override.aes = list(size = 10))) +
   theme_bw() +
   theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
-        axis.text.x = element_text(size = 13),
-        axis.text.y = element_text(size = 15),
-        axis.title.x = element_text(face = "bold", size = 15),
-        axis.title.y = element_text(face = "bold", size = 15),
-        legend.text = element_text(size = 13),
+        axis.text = element_text(size = 24),
+        axis.title = element_text(face = "bold", size = 20),
+        panel.grid = element_blank(),
+        legend.text = element_text(size = 13, face = "bold"),
         legend.title = element_text(face = "bold", size = 15)
   )
 
