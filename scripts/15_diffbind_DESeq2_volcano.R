@@ -10,8 +10,8 @@ rm(list = ls())
 # source(file = "E:/Chris_UM/GitHub/omics_util/GO_enrichment/topGO_functions.R")
 
 # "CEA17_AA_vs_CEA17_C", "5A9_AA_vs_5A9_C", "5A9_C_vs_CEA17_C", "5A9_AA_vs_CEA17_AA"
-analysisName <- "5A9_AA_vs_CEA17_AA"
-diffPair <- "5A9_AA_vs_CEA17_AA"
+analysisName <- "5A9_AA_vs_5A9_C"
+diffPair <- "5A9_AA_vs_5A9_C"
 
 outDir <- here::here("analysis", "integration_analysis", "diffbind_DESeq2_volcano", analysisName)
 outPrefix <- paste(outDir, "/", analysisName, ".diffbind_goodPeaks", sep = "")
@@ -40,6 +40,8 @@ grp1 <- diffbindCompare[1]
 grp2 <- diffbindCompare[2]
 grp1Enrich = paste(grp1, ":enriched", sep = "")
 grp2Enrich = paste(grp2, ":enriched", sep = "")
+grp1Specific = paste(grp1, ":specific", sep = "")
+grp2Specific = paste(grp2, ":specific", sep = "")
 
 tfCols <- sapply(
   X = c("hasPeak", "peakId", "peakEnrichment", "peakPval", "peakQval", "peakSummit", "peakDist", "summitDist",
@@ -66,10 +68,10 @@ diffbindRes <- suppressMessages(readr::read_tsv(file = file_diffbindTargets, col
 
 diffbindRes <- dplyr::filter(diffbindRes, pvalFilteredN > 0)
 
-diffData <- suppressMessages(readr::read_tsv(file = file_degs, col_names = T))
+degData <- suppressMessages(readr::read_tsv(file = file_degs, col_names = T))
 
 
-plotData <- dplyr::left_join(x = diffData, y = diffbindRes, by = c("geneId" = "geneId")) %>% 
+mergedData <- dplyr::left_join(x = degData, y = diffbindRes, by = c("geneId" = "geneId")) %>% 
   tidyr::replace_na(purrr::set_names(list(FALSE, FALSE), unname(tfCols$hasPeak[chipSamples]))) %>% 
   dplyr::mutate(
     categoryRNAseq = dplyr::case_when(
@@ -81,9 +83,22 @@ plotData <- dplyr::left_join(x = diffData, y = diffbindRes, by = c("geneId" = "g
   )
 
 ## store data
-readr::write_tsv(x = plotData, path = paste(outPrefix, ".data.tab"))
+readr::write_tsv(x = mergedData, path = paste(outPrefix, ".data.tab"))
 
 ##################################################################################
+## select best peak for a gene which has multiple peaks
+plotData <- mergedData %>% 
+  dplyr::mutate(
+    minPeakDist = pmin(abs(!!as.name(tfCols$peakDist[chipSamples[1]])),
+                       abs(!!as.name(tfCols$peakDist[chipSamples[2]])),
+                       na.rm = TRUE
+                       )
+  ) %>% 
+  dplyr::group_by(geneId) %>% 
+  dplyr::arrange(abs(minPeakDist), desc(bestPval)) %>% 
+  dplyr::slice(1L) %>% 
+  dplyr::ungroup()
+
 ## generate summary stats
 summary_tf1 <- dplyr::filter(plotData, !! as.name(unname(tfCols$hasPeak[chipSamples[1]])) == TRUE) %>% 
   dplyr::group_by(categoryRNAseq) %>% 
@@ -95,12 +110,12 @@ summary_tf2 <- dplyr::filter(plotData, !! as.name(unname(tfCols$hasPeak[chipSamp
   summarise(!! unname(tfCols$hasPeak[chipSamples[2]]) := n()) %>% 
   dplyr::ungroup()
 
-summary_tf1_enrich <- dplyr::filter(plotData, categoryDiffbind == !!grp1Enrich) %>% 
+summary_tf1_enrich <- dplyr::filter(plotData, categoryDiffbind %in% c(grp1Enrich, grp1Specific)) %>% 
   dplyr::group_by(categoryRNAseq) %>% 
   summarise(!! chipSamples[1] := n()) %>% 
   dplyr::ungroup()
 
-summary_tf2_enrich <- dplyr::filter(plotData, categoryDiffbind == !!grp2Enrich) %>% 
+summary_tf2_enrich <- dplyr::filter(plotData, categoryDiffbind %in% c(grp2Enrich, grp2Specific)) %>% 
   dplyr::group_by(categoryRNAseq) %>% 
   summarise(!! chipSamples[2] := n()) %>% 
   dplyr::ungroup()
@@ -141,21 +156,23 @@ plotData[[lfc_col]] <- scales::squish(x = plotData[[lfc_col]], range = xlimit)
 significantData <- dplyr::filter(plotData, categoryRNAseq %in% c("Significant Up", "Significant Down"))
 # significantData <- plotData
 
-targetColors <- c("specific:CREEHA_CONTROL:down" = "#a50026",
-                  "specific:CREEHA_CONTROL:noDiff" = "#f46d43",
-                  "common:down" = "#fee08b",
-                  "common:noDiff" = "yellow",
-                  "common:up" = "#e0f3f8",
-                  "specific:CREEHA_10MMAA:noDiff" = "#74add1",
-                  "specific:CREEHA_10MMAA:up" = "#006837")
+# targetColors <- c("specific:CREEHA_CONTROL:down" = "#a50026",
+#                   "specific:CREEHA_CONTROL:noDiff" = "#f46d43",
+#                   "common:down" = "#fee08b",
+#                   "common:noDiff" = "yellow",
+#                   "common:up" = "#e0f3f8",
+#                   "specific:CREEHA_10MMAA:noDiff" = "#74add1",
+#                   "specific:CREEHA_10MMAA:up" = "#006837")
+# 
+# diffbindColors <- c("down" = "red", "noDiff" = "green", "up" = "blue")
+# targetTypeShape <- c("specific:CREEHA_CONTROL" = 25,
+#                      "common" = 22,
+#                      "specific:CREEHA_10MMAA" = 24)
 
-diffbindColors <- c("down" = "red", "noDiff" = "green", "up" = "blue")
-diffbindCategoryColors <- structure(c("red", "green", "blue"),
-                                    names = c(grp1Enrich, "common", grp2Enrich))
+diffbindCategoryColors <- structure(
+  c("#e60000", "#ff4d4d", "green", "#6666ff", "#0000e6"),
+  names = c(grp1Specific, grp1Enrich, "common", grp2Enrich, grp2Specific))
 
-targetTypeShape <- c("specific:CREEHA_CONTROL" = 25,
-                     "common" = 22,
-                     "specific:CREEHA_10MMAA" = 24)
 
 
 #draw Volcano plot
@@ -183,10 +200,10 @@ vpt <- ggplot(mapping = aes(x = !! as.name(lfc_col), y = log10FDR)) +
   # scale_fill_manual(
   #   values = diffbindColors, breaks = names(diffbindColors), guide = FALSE
   # ) +
-  # scale_shape_manual(
-  #   name = "peak occupancy", values = targetTypeShape, breaks = names(targetTypeShape)
-  # ) +
-  scale_x_continuous(name = "log2(fold_change)", limits = xlimit, expand = expand_scale(mult = 0.02)) +
+# scale_shape_manual(
+#   name = "peak occupancy", values = targetTypeShape, breaks = names(targetTypeShape)
+# ) +
+scale_x_continuous(name = "log2(fold_change)", limits = xlimit, expand = expand_scale(mult = 0.02)) +
   scale_y_continuous(name = "-log10(q-value)", limits = c(0, ylimit), expand = expand_scale(mult = 0.02)) +
   guides(color = guide_legend(override.aes = list(size = 5)),
          shape = guide_legend(override.aes = list(size = 5, fill = "black"))) +
@@ -201,6 +218,7 @@ vpt <- ggplot(mapping = aes(x = !! as.name(lfc_col), y = log10FDR)) +
         axis.text = element_text(size = 30)) +
   ggtitle(plotTitle)
 
+# plot(vpt)
 
 ## mark gene of interest
 markGenes <- c()
