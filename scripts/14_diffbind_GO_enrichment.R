@@ -33,6 +33,9 @@ grp1 <- diffbindCompare[1]
 grp2 <- diffbindCompare[2]
 grp1Enrich = paste(grp1, ":enriched", sep = "")
 grp2Enrich = paste(grp2, ":enriched", sep = "")
+grp1Specific = paste(grp1, ":specific", sep = "")
+grp2Specific = paste(grp2, ":specific", sep = "")
+
 
 ## get the sample details
 exptData <- get_sample_information(exptInfoFile = file_exptInfo,
@@ -54,58 +57,68 @@ tfCols <- sapply(
 diffbindTargets <- suppressMessages(readr::read_tsv(file = file_diffbindTargets, col_names = T))
 diffbindTargets <- dplyr::filter(diffbindTargets, pvalFilteredN > 0)
 
+dplyr::group_by(diffbindTargets, categoryDiffbind) %>% 
+  dplyr::summarise(n = n())
+
 ##################################################################################
 
 ## genes specific to CREEHA_CONTROL sample
 nodeSize <- 5
-plotTitle <- paste(grp1, ": increased binding signal")
 outPrefixTf1 <- paste(outPrefix, grp1, "_enriched", sep = "")
 
-tf1StrongTargets <- dplyr::filter(.data = diffbindTargets, categoryDiffbind == grp1Enrich)
+tf1StrongTargets <- dplyr::filter(.data = diffbindTargets,
+                                  categoryDiffbind %in% c(grp1Enrich, grp1Specific))
 
 nrow(tf1StrongTargets)
 
-tf1Go <- topGO_enrichment(genes = unique(tf1StrongTargets$geneId), goMapFile = file_goMap, goNodeSize = nodeSize)
+tf1Go <- topGO_enrichment(genes = unique(tf1StrongTargets$geneId),
+                          goMapFile = file_goMap, goNodeSize = nodeSize)
 
 tf1Go$condition <- grp1Enrich
 
 readr::write_tsv(x = tf1Go, path = paste(outPrefixTf1, ".tab", sep = ""))
+
+plotTitle <- paste(grp1, ": increased binding signal ( n =", length(unique(tf1StrongTargets$geneId)), ")")
 
 tf1GoScatter <- topGO_scatterPlot(df = tf1Go, title = plotTitle)
 
 ##################################################################################
 ## genes specific to CREEHA_10MMAA3 sample
 
-plotTitle <- paste(grp2, ": increased binding signal")
 outPrefixTf2 <- paste(outPrefix, grp2, "_enriched", sep = "")
 
-tf2StrongTargets <- dplyr::filter(.data = diffbindTargets, categoryDiffbind == grp2Enrich)
+tf2StrongTargets <- dplyr::filter(.data = diffbindTargets,
+                                  categoryDiffbind %in% c(grp2Enrich, grp2Specific))
 nrow(tf2StrongTargets)
 
-tf2Go <- topGO_enrichment(genes = unique(tf2StrongTargets$geneId), goMapFile = file_goMap, goNodeSize = nodeSize)
+tf2Go <- topGO_enrichment(genes = unique(tf2StrongTargets$geneId),
+                          goMapFile = file_goMap, goNodeSize = nodeSize)
 
 tf2Go$condition <- grp2Enrich
 
 readr::write_tsv(x = tf2Go, path = paste(outPrefixTf2, ".tab", sep = ""))
 
+plotTitle <- paste(grp2, ": increased binding signal ( n =", length(unique(tf2StrongTargets$geneId)), ")")
 tf2GoScatter <- topGO_scatterPlot(df = tf2Go, title = plotTitle)
 
 ##################################################################################
 ## common targets for CREEHA_CONTROL2 and CREEHA_10MMAA3 samples
 
-plotTitle <- paste("no change in binding signal between", grp1, "and", grp2, sep = " ")
 outPrefixCommon <- paste(outPrefix, "common_noDiff", sep = "")
 
 nodiffTargets <- dplyr::filter(.data = diffbindTargets, categoryDiffbind == "common")
 
 nrow(nodiffTargets)
 
-commonGo <- topGO_enrichment(genes = unique(nodiffTargets$geneId), goMapFile = file_goMap, goNodeSize = nodeSize)
+commonGo <- topGO_enrichment(genes = unique(nodiffTargets$geneId),
+                             goMapFile = file_goMap, goNodeSize = nodeSize)
 
 commonGo$condition <- "common"
 
 readr::write_tsv(x = commonGo, path = paste(outPrefixCommon, ".tab", sep = ""))
 
+plotTitle <- paste("no change in binding signal between", grp1, "and",
+                   grp2, "( n =", length(unique(nodiffTargets$geneId)))
 commonGoScatter <- topGO_scatterPlot(df = commonGo, title = plotTitle)
 
 ##################################################################################
@@ -115,7 +128,7 @@ aligned_plots <- align_plots(
   align = "v")
 
 pdf(file = paste(outPrefix, "scatterplot.pdf", sep = ""),
-    width = 14, height = 14, onefile = T, pointsize = 18)
+    width = 15, height = 14, onefile = T, pointsize = 18)
 ggdraw(aligned_plots$tf1)
 ggdraw(aligned_plots$tf2)
 ggdraw(aligned_plots$common)
