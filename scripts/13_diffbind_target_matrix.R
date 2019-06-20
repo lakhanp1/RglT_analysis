@@ -18,7 +18,7 @@ outPrefix <- paste(outDir, "/", sep = "")
 compare <- c("CREEHA_CONTROL", "CREEHA_10MMAA")
 
 ##################################################################################
-summitSeqLen <- 500
+summitSeqLen <- 200
 
 file_diffbindInfo <- here::here("analysis", "ChIPseq_analysis", "diffBind", "sampleInfo.txt")
 file_exptInfo <- here::here("data", "referenceData/sampleInfo.txt")
@@ -72,9 +72,9 @@ targetMat <- diffbindAnn %>%
   dplyr::select(name, geneId, peakPosition, diffBind, peakOccupancy, categoryDiffbind, pvalFilteredN,
                 starts_with("hasPeak."), starts_with("peakPval."), starts_with("peakId."),
                 starts_with("summitSeq."), starts_with("summitRegion."),
-                starts_with("peakType."), starts_with("peakDist.")) %>% 
+                starts_with("peakType."), starts_with("peakDist."), bestPval) %>% 
   dplyr::select(name, geneId, peakPosition, diffBind, peakOccupancy, categoryDiffbind,
-                contains(bestGrp1Id), contains(bestGrp2Id), pvalFilteredN)
+                contains(bestGrp1Id), contains(bestGrp2Id), pvalFilteredN, bestPval)
 
 readr::write_tsv(x = targetMat, path = paste(outPrefix, "diffbind_allPeak_targets.tab", sep = ""))
 

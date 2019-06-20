@@ -60,8 +60,8 @@ grp1Index <- which(exptData$groupId == grp1)
 grp2Index <- which(exptData$groupId == grp2)
 grp1Samples <- exptData$sampleId[grp1Index]
 grp2Samples <- exptData$sampleId[grp2Index]
-grp1SpecificOcc = paste("specific:", grp1, sep = "")
-grp2SpecificOcc = paste("specific:", grp2, sep = "")
+grp1SpecificOcc = paste(grp1, ":specific", sep = "")
+grp2SpecificOcc = paste(grp2, ":specific", sep = "")
 
 groupCols <- sapply(
   X = c("peakCall"),
@@ -152,15 +152,17 @@ diffData <- diffRes %>%
   )
 
 
-dplyr::group_by(diffData, peakOccupancy, diffBind) %>% 
+dplyr::group_by(diffData, diffBind, peakOccupancy) %>% 
   dplyr::summarise(n = n())
 
 ## assign peak category based on diffbind and peakOccupancy
 diffData <- diffData %>% 
   dplyr::mutate(
     categoryDiffbind = dplyr::case_when(
-      diffBind == "down" | peakOccupancy == grp1SpecificOcc ~ paste(grp1, ":enriched", sep = ""),
-      diffBind == "up" | peakOccupancy == grp2SpecificOcc ~ paste(grp2, ":enriched", sep = ""),
+      peakOccupancy == grp1SpecificOcc ~ grp1SpecificOcc,
+      peakOccupancy == grp2SpecificOcc ~ grp2SpecificOcc,
+      diffBind == "down" ~ paste(grp1, ":enriched", sep = ""),
+      diffBind == "up" ~ paste(grp2, ":enriched", sep = ""),
       diffBind == "noDiff" & peakOccupancy == "common" ~ "common",
       TRUE ~ "NA"
     )
@@ -169,6 +171,11 @@ diffData <- diffData %>%
                 diffBind, peakOccupancy, categoryDiffbind, starts_with("peakCall."), everything(),
                 -starts_with("peakEnrichment."))
 
+
+# diffBind == "down" | peakOccupancy == grp1SpecificOcc ~ paste(grp1, ":enriched", sep = ""),
+# diffBind == "up" | peakOccupancy == grp2SpecificOcc ~ paste(grp2, ":enriched", sep = ""),
+# diffBind == "noDiff" & peakOccupancy == "common" ~ "common",
+# TRUE ~ "NA"
 
 readr::write_tsv(x = diffData, path = paste(outPrefix, ".all.tab", sep = ""))
 
@@ -286,16 +293,11 @@ diffAnn <- diffAnn %>%
 ## multiple peaks
 diffAnn <- diffAnn %>% 
   dplyr::mutate(
-    bestPval = dplyr::case_when(
-      peakOccupancy == !!grp1SpecificOcc ~ !!as.name(tfCols$peakPval[bestGrp1Id]),
-      peakOccupancy == !!grp2SpecificOcc ~ !!as.name(tfCols$peakPval[bestGrp2Id]),
-      peakOccupancy == "common" &
-        !!as.name(tfCols$peakPval[bestGrp1Id]) > !!as.name(tfCols$peakPval[bestGrp2Id]) ~
-        !!as.name(tfCols$peakPval[bestGrp1Id]),
-      peakOccupancy == "common" &
-        !!as.name(tfCols$peakPval[bestGrp1Id]) < !!as.name(tfCols$peakPval[bestGrp2Id]) ~
-        !!as.name(tfCols$peakPval[bestGrp2Id]),
-      TRUE ~ 0)
+    bestPval = pmax(
+      !!as.name(tfCols$peakPval[bestGrp1Id]),
+      !!as.name(tfCols$peakPval[bestGrp2Id]),
+      na.rm = TRUE
+    )
   )
 
 
@@ -310,15 +312,18 @@ readr::write_tsv(x = diffAnn, path = paste(outPrefix, ".all.annotation.tab", sep
 
 ##################################################################################
 ## final confident diffbind annotation
+## for specific as well as common targets, select the peaks which are annotated. no
+## use of peaks which are not annotated
+
 ## tf1 specific targets. additionally remove the tf1 specific targets which are
 ## no-diff by diffbind and there is one peak detected in another sample
 tf1Specific <- dplyr::filter(
   diffAnn,
-  !! as.name(groupCols$peakCall[grp1]) == 2 & !! as.name(groupCols$peakCall[grp2]) < 2,
+  !! as.name(groupCols$peakCall[grp1]) >= 2 & !! as.name(groupCols$peakCall[grp2]) < 2,
   !is.na(!! as.name(tfCols$peakPosition[bestGrp1Id]))) %>% 
-  dplyr::filter(
-    !(diffBind == "noDiff" & !! as.name(groupCols$peakCall[grp2]) == 1)
-  ) %>% 
+  # dplyr::filter(
+  #   !(diffBind == "noDiff" & !! as.name(groupCols$peakCall[grp2]) == 1)
+  # ) %>% 
   dplyr::mutate(
     !! tfCols$hasPeak[bestGrp1Id] := TRUE,
     !! tfCols$hasPeak[bestGrp2Id] := FALSE
@@ -328,20 +333,20 @@ tf1Specific <- dplyr::filter(
 ## no-diff by diffbind and there is one peak detected in another sample
 tf2Specific <- dplyr::filter(
   diffAnn,
-  !! as.name(groupCols$peakCall[grp2]) == 2 & !! as.name(groupCols$peakCall[grp1]) < 2,
+  !! as.name(groupCols$peakCall[grp2]) >= 2 & !! as.name(groupCols$peakCall[grp1]) < 2,
   !is.na(!! as.name(tfCols$peakPosition[bestGrp2Id]))) %>% 
-  dplyr::filter(
-    !(diffBind == "noDiff" & !! as.name(groupCols$peakCall[grp1]) == 1)
-  ) %>% 
+  # dplyr::filter(
+  #   !(diffBind == "noDiff" & !! as.name(groupCols$peakCall[grp1]) == 1)
+  # ) %>% 
   dplyr::mutate(
     !! tfCols$hasPeak[bestGrp1Id] := FALSE,
     !! tfCols$hasPeak[bestGrp2Id] := TRUE
   )
 
-## common targets
+## common targets: 
 common <- dplyr::filter(
   diffAnn,
-  !! as.name(groupCols$peakCall[grp2]) == 2 & !! as.name(groupCols$peakCall[grp1]) == 2,
+  !! as.name(groupCols$peakCall[grp2]) >= 2 & !! as.name(groupCols$peakCall[grp1]) >= 2,
   targetMatch, peakPosMatch) %>% 
   dplyr::mutate(
     !! tfCols$hasPeak[bestGrp1Id] := TRUE,
@@ -349,11 +354,8 @@ common <- dplyr::filter(
   )
 
 
+## no need to select a best peak when a gene has more than 1 peaks. report all
 finalDiffbind <- dplyr::bind_rows(tf1Specific, tf2Specific, common) %>% 
-  dplyr::group_by(geneId, peakPosition) %>% 
-  dplyr::arrange(desc(bestPval),  .by_group = TRUE) %>%
-  dplyr::slice(1L) %>% 
-  dplyr::ungroup() %>% 
   dplyr::arrange(seqnames, start) %>% 
   dplyr::select(-starts_with("targetGene.")) %>% 
   dplyr::select(seqnames, start, end, name, geneId, peakPosition, Fold, p.value, FDR, diffBind,
