@@ -3,39 +3,39 @@
     <Resources>
         <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\bwFiles\CREEHA_10MMAA5_normalized.bw"/>
         <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\bwFiles\CREEHA_CONTROL3_normalized.bw"/>
-        <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_10MMAA5\CREEHA_10MMAA5_withCtrl_peaks.narrowPeak"/>
-        <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_CONTROL4\CREEHA_CONTROL4_withCtrl_peaks.narrowPeak"/>
+        <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_CONTROL5\CREEHA_CONTROL5.withCtrl_peaks.narrowPeak"/>
         <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\bwFiles\CREEHA_CONTROL5_normalized.bw"/>
         <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\bwFiles\CREEHA_10MMAA3_normalized.bw"/>
+        <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_10MMAA4\CREEHA_10MMAA4.withCtrl_peaks.narrowPeak"/>
+        <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_CONTROL4\CREEHA_CONTROL4.withCtrl_peaks.narrowPeak"/>
         <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\bwFiles\WT_10MMAA3_normalized.bw"/>
-        <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_CONTROL3\CREEHA_CONTROL3_withCtrl_peaks.narrowPeak"/>
         <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\bwFiles\WT_10MMAA5_normalized.bw"/>
-        <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_CONTROL2\CREEHA_CONTROL2_withCtrl_peaks.narrowPeak"/>
-        <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_10MMAA3\CREEHA_10MMAA3_withCtrl_peaks.narrowPeak"/>
         <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\bwFiles\CREEHA_10MMAA4_normalized.bw"/>
         <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\bwFiles\WT_CONTROL5_normalized.bw"/>
+        <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_10MMAA2\CREEHA_10MMAA2.withCtrl_peaks.narrowPeak"/>
         <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\bwFiles\CREEHA_CONTROL4_normalized.bw"/>
         <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\bwFiles\CREEHA_CONTROL2_normalized.bw"/>
+        <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_CONTROL3\CREEHA_CONTROL3.withCtrl_peaks.narrowPeak"/>
         <Resource path="E:\Chris_UM\Database\A_fumigatus_293_version_s03-m05-r06\A_fumigatus_Af293_version_s03-m05-r06_features.gff"/>
         <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\bwFiles\WT_CONTROL3_normalized.bw"/>
         <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\bwFiles\CREEHA_10MMAA2_normalized.bw"/>
-        <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_CONTROL5\CREEHA_CONTROL5_withCtrl_peaks.narrowPeak"/>
-        <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_10MMAA2\CREEHA_10MMAA2_withCtrl_peaks.narrowPeak"/>
-        <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_10MMAA4\CREEHA_10MMAA4_withCtrl_peaks.narrowPeak"/>
+        <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_10MMAA3\CREEHA_10MMAA3.withCtrl_peaks.narrowPeak"/>
+        <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_CONTROL2\CREEHA_CONTROL2.withCtrl_peaks.narrowPeak"/>
+        <Resource path="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_10MMAA5\CREEHA_10MMAA5.withCtrl_peaks.narrowPeak"/>
     </Resources>
-    <Panel height="273" name="DataPanel" width="1901">
+    <Panel height="204" name="DataPanel" width="1901">
         <Track clazz="org.broad.igv.track.SequenceTrack" displayMode="EXPANDED" fontSize="10" id="Reference sequence" name="Reference sequence" visible="true"/>
         <Track altColor="0,0,178" clazz="org.broad.igv.track.FeatureTrack" color="0,0,178" colorScale="ContinuousColorScale;0.0;150.0;255,255,255;0,0,178" displayMode="EXPANDED" fontSize="14" id="E:\Chris_UM\Database\A_fumigatus_293_version_s03-m05-r06\A_fumigatus_Af293_version_s03-m05-r06_features.gff" name="A_fumigatus_Af293_version_s03-m05-r06_features.gff" visible="true"/>
     </Panel>
-    <Panel height="182" name="FeaturePanel2" width="1901">
+    <Panel height="185" name="FeaturePanel2" width="1901">
         <Track altColor="153,0,153" autoScale="true" clazz="org.broad.igv.track.DataSourceTrack" color="153,0,153" displayMode="EXPANDED" fontSize="14" id="E:\Chris_UM\Analysis\27_Brazil_data\data\bwFiles\CREEHA_10MMAA4_normalized.bw" name="CREEHA_10MMAA4" renderer="BAR_CHART" visible="true" windowFunction="mean">
             <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="13.34" minimum="0.0" type="LINEAR"/>
         </Track>
-        <Track altColor="0,0,204" clazz="org.broad.igv.track.FeatureTrack" color="0,0,204" colorScale="ContinuousColorScale;0.0;11.0;255,255,255;0,0,204" displayMode="SQUISHED" fontSize="14" height="25" id="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_10MMAA4\CREEHA_10MMAA4_withCtrl_peaks.narrowPeak" name="CREEHA_10MMAA4.narrowPeak" visible="true"/>
+        <Track altColor="0,0,204" clazz="org.broad.igv.track.FeatureTrack" color="0,0,204" colorScale="ContinuousColorScale;0.0;11.0;255,255,255;0,0,204" displayMode="SQUISHED" fontSize="14" height="25" id="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_10MMAA4\CREEHA_10MMAA4.withCtrl_peaks.narrowPeak" name="CREEHA_10MMAA4.narrowPeak" visible="true"/>
         <Track altColor="153,0,153" autoScale="true" clazz="org.broad.igv.track.DataSourceTrack" color="153,0,153" displayMode="EXPANDED" fontSize="14" id="E:\Chris_UM\Analysis\27_Brazil_data\data\bwFiles\CREEHA_10MMAA5_normalized.bw" name="CREEHA_10MMAA5" renderer="BAR_CHART" visible="true" windowFunction="mean">
             <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="20.916" minimum="0.0" type="LINEAR"/>
         </Track>
-        <Track altColor="0,0,204" clazz="org.broad.igv.track.FeatureTrack" color="0,0,204" colorScale="ContinuousColorScale;0.0;12.0;255,255,255;0,0,204" displayMode="SQUISHED" fontSize="14" height="25" id="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_10MMAA5\CREEHA_10MMAA5_withCtrl_peaks.narrowPeak" name="CREEHA_10MMAA5.narrowPeak" visible="true"/>
+        <Track altColor="0,0,204" clazz="org.broad.igv.track.FeatureTrack" color="0,0,204" colorScale="ContinuousColorScale;0.0;12.0;255,255,255;0,0,204" displayMode="SQUISHED" fontSize="14" height="25" id="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_10MMAA5\CREEHA_10MMAA5.withCtrl_peaks.narrowPeak" name="CREEHA_10MMAA5.narrowPeak" visible="true"/>
         <Track altColor="153,0,153" autoScale="true" clazz="org.broad.igv.track.DataSourceTrack" color="153,0,153" displayMode="EXPANDED" fontSize="14" id="E:\Chris_UM\Analysis\27_Brazil_data\data\bwFiles\WT_10MMAA5_normalized.bw" name="WT_10MMAA5" renderer="BAR_CHART" visible="true" windowFunction="mean">
             <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="14.21" minimum="0.0" type="LINEAR"/>
         </Track>
@@ -44,11 +44,11 @@
         <Track altColor="153,51,0" autoScale="true" clazz="org.broad.igv.track.DataSourceTrack" color="153,51,0" displayMode="EXPANDED" fontSize="14" id="E:\Chris_UM\Analysis\27_Brazil_data\data\bwFiles\CREEHA_CONTROL4_normalized.bw" name="CREEHA_CONTROL4" renderer="BAR_CHART" visible="true" windowFunction="mean">
             <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="15.675" minimum="0.0" type="LINEAR"/>
         </Track>
-        <Track altColor="0,0,255" clazz="org.broad.igv.track.FeatureTrack" color="0,0,255" colorScale="ContinuousColorScale;0.0;8.0;255,255,255;0,0,255" displayMode="SQUISHED" fontSize="14" height="25" id="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_CONTROL4\CREEHA_CONTROL4_withCtrl_peaks.narrowPeak" name="CREEHA_CONTROL4.narrowPeak" visible="true"/>
+        <Track altColor="0,0,255" clazz="org.broad.igv.track.FeatureTrack" color="0,0,255" colorScale="ContinuousColorScale;0.0;8.0;255,255,255;0,0,255" displayMode="SQUISHED" fontSize="14" height="25" id="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_CONTROL4\CREEHA_CONTROL4.withCtrl_peaks.narrowPeak" name="CREEHA_CONTROL4.narrowPeak" visible="true"/>
         <Track altColor="153,51,0" autoScale="true" clazz="org.broad.igv.track.DataSourceTrack" color="153,51,0" displayMode="EXPANDED" fontSize="14" id="E:\Chris_UM\Analysis\27_Brazil_data\data\bwFiles\CREEHA_CONTROL5_normalized.bw" name="CREEHA_CONTROL5" renderer="BAR_CHART" visible="true" windowFunction="mean">
             <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="14.28" minimum="0.0" type="LINEAR"/>
         </Track>
-        <Track altColor="0,0,255" clazz="org.broad.igv.track.FeatureTrack" color="0,0,255" displayMode="SQUISHED" fontSize="14" height="25" id="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_CONTROL5\CREEHA_CONTROL5_withCtrl_peaks.narrowPeak" name="CREEHA_CONTROL5.narrowPeak" visible="true"/>
+        <Track altColor="0,0,255" clazz="org.broad.igv.track.FeatureTrack" color="0,0,255" displayMode="SQUISHED" fontSize="14" height="25" id="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_CONTROL5\CREEHA_CONTROL5.withCtrl_peaks.narrowPeak" name="CREEHA_CONTROL5.narrowPeak" visible="true"/>
         <Track altColor="153,51,0" autoScale="true" clazz="org.broad.igv.track.DataSourceTrack" color="153,51,0" displayMode="EXPANDED" fontSize="14" id="E:\Chris_UM\Analysis\27_Brazil_data\data\bwFiles\WT_CONTROL5_normalized.bw" name="WT_CONTROL5" renderer="BAR_CHART" visible="true" windowFunction="mean">
             <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="16.448" minimum="0.0" type="LINEAR"/>
         </Track>
@@ -57,25 +57,30 @@
         <Track altColor="153,51,0" autoScale="true" clazz="org.broad.igv.track.DataSourceTrack" color="153,51,0" displayMode="EXPANDED" fontSize="14" id="E:\Chris_UM\Analysis\27_Brazil_data\data\bwFiles\CREEHA_CONTROL2_normalized.bw" name="CREEHA_CONTROL2" renderer="BAR_CHART" visible="true" windowFunction="mean">
             <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="10.752" minimum="0.0" type="LINEAR"/>
         </Track>
-        <Track altColor="0,0,255" clazz="org.broad.igv.track.FeatureTrack" color="0,0,255" displayMode="SQUISHED" fontSize="14" height="25" id="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_CONTROL2\CREEHA_CONTROL2_withCtrl_peaks.narrowPeak" name="CREEHA_CONTROL2.narrowPeak" visible="true"/>
+        <Track altColor="0,0,255" clazz="org.broad.igv.track.FeatureTrack" color="0,0,255" displayMode="SQUISHED" fontSize="14" height="25" id="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_CONTROL2\CREEHA_CONTROL2.withCtrl_peaks.narrowPeak" name="CREEHA_CONTROL2.narrowPeak" visible="true"/>
         <Track altColor="153,51,0" autoScale="true" clazz="org.broad.igv.track.DataSourceTrack" color="153,51,0" displayMode="EXPANDED" fontSize="14" id="E:\Chris_UM\Analysis\27_Brazil_data\data\bwFiles\CREEHA_CONTROL3_normalized.bw" name="CREEHA_CONTROL3" renderer="BAR_CHART" visible="true" windowFunction="mean">
             <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="11.505" minimum="0.0" type="LINEAR"/>
         </Track>
-        <Track altColor="0,0,255" clazz="org.broad.igv.track.FeatureTrack" color="0,0,255" displayMode="SQUISHED" fontSize="14" height="25" id="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_CONTROL3\CREEHA_CONTROL3_withCtrl_peaks.narrowPeak" name="CREEHA_CONTROL3.narrowPeak" visible="true"/>
+        <Track altColor="0,0,255" clazz="org.broad.igv.track.FeatureTrack" color="0,0,255" displayMode="SQUISHED" fontSize="14" height="25" id="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_CONTROL3\CREEHA_CONTROL3.withCtrl_peaks.narrowPeak" name="CREEHA_CONTROL3.narrowPeak" visible="true"/>
         <Track altColor="153,51,0" autoScale="true" clazz="org.broad.igv.track.DataSourceTrack" color="153,51,0" displayMode="EXPANDED" fontSize="14" id="E:\Chris_UM\Analysis\27_Brazil_data\data\bwFiles\WT_CONTROL3_normalized.bw" name="WT_CONTROL3" renderer="BAR_CHART" visible="true" windowFunction="mean">
             <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="11.02" minimum="0.0" type="LINEAR"/>
         </Track>
         <Track altColor="153,0,153" autoScale="true" clazz="org.broad.igv.track.DataSourceTrack" color="153,0,153" displayMode="EXPANDED" fontSize="14" id="E:\Chris_UM\Analysis\27_Brazil_data\data\bwFiles\CREEHA_10MMAA2_normalized.bw" name="CREEHA_10MMAA2" renderer="BAR_CHART" visible="true" windowFunction="mean">
             <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="12.645" minimum="0.0" type="LINEAR"/>
         </Track>
-        <Track altColor="0,0,255" clazz="org.broad.igv.track.FeatureTrack" color="0,0,255" displayMode="SQUISHED" fontSize="14" height="25" id="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_10MMAA2\CREEHA_10MMAA2_withCtrl_peaks.narrowPeak" name="CREEHA_10MMAA2.narrowPeak" visible="true"/>
+        <Track altColor="0,0,255" clazz="org.broad.igv.track.FeatureTrack" color="0,0,255" displayMode="SQUISHED" fontSize="14" height="25" id="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_10MMAA2\CREEHA_10MMAA2.withCtrl_peaks.narrowPeak" name="CREEHA_10MMAA2.narrowPeak" visible="true"/>
         <Track altColor="153,0,153" autoScale="true" clazz="org.broad.igv.track.DataSourceTrack" color="153,0,153" displayMode="EXPANDED" fontSize="14" id="E:\Chris_UM\Analysis\27_Brazil_data\data\bwFiles\CREEHA_10MMAA3_normalized.bw" name="CREEHA_10MMAA3" renderer="BAR_CHART" visible="true" windowFunction="mean">
             <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="12.464" minimum="0.0" type="LINEAR"/>
         </Track>
-        <Track altColor="0,0,255" clazz="org.broad.igv.track.FeatureTrack" color="0,0,255" displayMode="SQUISHED" fontSize="14" height="25" id="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_10MMAA3\CREEHA_10MMAA3_withCtrl_peaks.narrowPeak" name="CREEHA_10MMAA3.narrowPeak" visible="true"/>
+        <Track altColor="0,0,255" clazz="org.broad.igv.track.FeatureTrack" color="0,0,255" displayMode="SQUISHED" fontSize="14" height="25" id="E:\Chris_UM\Analysis\27_Brazil_data\data\TF_data\CREEHA_10MMAA3\CREEHA_10MMAA3.withCtrl_peaks.narrowPeak" name="CREEHA_10MMAA3.narrowPeak" visible="true"/>
         <Track altColor="153,0,153" autoScale="true" clazz="org.broad.igv.track.DataSourceTrack" color="153,0,153" displayMode="EXPANDED" fontSize="14" id="E:\Chris_UM\Analysis\27_Brazil_data\data\bwFiles\WT_10MMAA3_normalized.bw" name="WT_10MMAA3" renderer="BAR_CHART" visible="true" windowFunction="mean">
             <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="10.98" minimum="0.0" type="LINEAR"/>
         </Track>
     </Panel>
-    <PanelLayout dividerFractions="0.3420398009950249,0.5746268656716418,0.8084577114427861"/>
+    <PanelLayout dividerFractions="0.2562189054726368,0.4925373134328358,0.7263681592039801"/>
+    <HiddenAttributes>
+        <Attribute name="DATA FILE"/>
+        <Attribute name="DATA TYPE"/>
+        <Attribute name="NAME"/>
+    </HiddenAttributes>
 </Session>
