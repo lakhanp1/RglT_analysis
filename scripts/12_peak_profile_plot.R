@@ -39,21 +39,24 @@ grp1Index <- which(exptData$groupId == grp1)
 grp2Index <- which(exptData$groupId == grp2)
 grp1Samples <- exptData$sampleId[grp1Index]
 grp2Samples <- exptData$sampleId[grp2Index]
-grp1SpecificOcc = paste("specific:", grp1, sep = "")
-grp2SpecificOcc = paste("specific:", grp2, sep = "")
+grp1SpecificOcc = paste(grp1, ":specific", sep = "")
+grp2SpecificOcc = paste(grp2, ":specific", sep = "")
+grp1EnrichedCategory <- paste(grp1, ":enriched", sep = "")
+grp2EnrichedCategory <- paste(grp2, ":enriched", sep = "")
 
 ##################################################################################
 
 # diffDba <- DiffBind::dba.load(file = paste(analysisName, ".dba", sep = ""), dir = outDir, pre = "")
 
 diffbindRes <- suppressMessages(readr::read_tsv(file = file_diffbindRes)) %>% 
-  dplyr::select(seqnames, start, end, name, Fold, diffBind, peakOccupancy, peakDiff, pvalFilteredN) %>% 
+  dplyr::select(seqnames, start, end, name, Fold, diffBind, peakOccupancy, categoryDiffbind, pvalFilteredN) %>% 
   dplyr::filter(pvalFilteredN != 0) %>% 
   dplyr::distinct(name, .keep_all = TRUE) %>% 
   dplyr::mutate(
     cluster = dplyr::case_when(
-      peakOccupancy != "common" ~ peakOccupancy,
-      peakOccupancy == "common" ~ peakDiff
+      peakOccupancy == "common" & categoryDiffbind != "common" ~ 
+        paste(peakOccupancy, categoryDiffbind, sep = "\n"),
+      TRUE ~ categoryDiffbind 
     )
   )
 
@@ -63,9 +66,9 @@ peakCenterGr <- GenomicRanges::resize(x = diffGr, fix = "center", width = 1, use
 
 which(table(diffGr$name) > 1)
 
-peakDiffAn <- dplyr::select(diffbindRes, name, diffBind, peakOccupancy, peakDiff, pvalFilteredN, cluster) %>% 
+peakDiffAn <- dplyr::select(diffbindRes, name, diffBind, peakOccupancy, categoryDiffbind, pvalFilteredN, cluster) %>% 
   dplyr::mutate(pvalGroup = if_else(pvalFilteredN == 0, "weak", "strong")) %>%
-  dplyr::rename(gene = name) %>%
+  dplyr::rename(geneId = name) %>%
   as.data.frame()
 
 peakDiffAn$diffBind <- factor(x = peakDiffAn$diffBind, levels = c("down", "noDiff", "up"))
@@ -74,7 +77,9 @@ peakDiffAn$peakOccupancy <- factor(
   levels = c(grp1SpecificOcc, "common", grp2SpecificOcc))
 peakDiffAn$cluster <- factor(
   x = peakDiffAn$cluster,
-  levels = c(grp1SpecificOcc, "common:down", "common:noDiff", "common:up", grp2SpecificOcc))
+  levels = c(grp1SpecificOcc, paste("common", grp1EnrichedCategory, sep = "\n"),
+             "common",
+             paste("common", grp2EnrichedCategory, sep = "\n"), grp2SpecificOcc))
 
 # ## for the first time, generate profile matrices.
 # ## next time these matrices can be directly imported
@@ -119,7 +124,7 @@ ylimList <- list(
 
 profilePlots <- multi_profile_plots(exptInfo = exptData, genesToPlot = diffGr$name,
                                     profileColors = tfColorList,
-                                    clusters = dplyr::select(peakDiffAn, gene, cluster),
+                                    clusters = dplyr::select(peakDiffAn, geneId, cluster),
                                     showAnnotation = FALSE,
                                     clustOrd = levels(peakDiffAn$cluster),
                                     targetType = "point",
