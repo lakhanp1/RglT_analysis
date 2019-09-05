@@ -111,6 +111,13 @@ meme-chip -order 1 -meme-minw 6 -meme-maxw 30 -meme-nmotifs 10 -dreme-e 0.05 -ce
 -db /home/lakhanp/tools/meme-5.0.4/db/motif_databases/JASPAR/JASPAR2018_CORE_fungi_non-redundant.meme \
 creE_combined.summit_500bp.fasta
 
+## meme-chip on combined stranded summit data: 500bp
+meme-chip -order 1 -meme-minw 6 -meme-maxw 30 -meme-nmotifs 10 -dreme-e 0.05 -centrimo-score 5.0 -centrimo-ethresh 10.0 -meme-p 6 \
+-oc rglT_combined.summit_stranded.500bp -desc meme_RglT_combined_500bp \
+-neg /home/lakhanp/database/A_fumigatus/Af293_version_s03-m05-r06/reference/A_fumigatus_Af293.CDS.upstream500.seq.fasta \
+-db /home/lakhanp/tools/meme-5.0.4/db/motif_databases/JASPAR/JASPAR2018_CORE_fungi_non-redundant.meme \
+rglT_combined.summit_stranded.500bp.fasta
+
 ## CREEHA_CONTROL_enriched: 500bp
 meme-chip -order 1 -meme-minw 6 -meme-maxw 30 -meme-nmotifs 10 -dreme-e 0.05 -centrimo-score 5.0 -centrimo-ethresh 10.0 -meme-p 6 \
 -oc meme_CREEHA_CONTROL_enriched_500bp -desc meme_CREEHA_CONTROL_enriched_500bp \
