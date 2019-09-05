@@ -72,7 +72,7 @@ length(unique(s2Targets$geneId))
 ## genes specific to CREEHA_CONTROL sample
 nodeSize <- 5
 plotTitle <- paste(s1, "specific targets")
-outPrefix <- paste(outDir, "/topGO/topGO_", s1, "_specific", sep = "")
+outPrefix <- paste(outDir, "/02_topGO/topGO_", s1, "_specific", sep = "")
 
 tf1SpecificTargets <- setdiff(s1Targets$geneId, s2Targets$geneId)
 
@@ -93,7 +93,7 @@ plotOut <- paste(outPrefix, ".pdf", sep = "")
 ## genes specific to CREEHA_10MMAA3 sample
 
 plotTitle <- paste(s2, "specific targets")
-outPrefix <- paste(outDir, "/topGO/topGO_", s2, "_specific", sep = "")
+outPrefix <- paste(outDir, "/02_topGO/topGO_", s2, "_specific", sep = "")
 
 tf2SpecificTargets <- setdiff(s2Targets$geneId, s1Targets$geneId)
 
@@ -113,7 +113,7 @@ plotOut <- paste(outPrefix, ".pdf", sep = "")
 ## common targets for CREEHA_CONTROL2 and CREEHA_10MMAA3 samples
 
 plotTitle <- paste("common targets between", s1, "and", s2, sep = " ")
-outPrefix <- paste(outDir, "/topGO/topGO_", s1, ".", s2, "_common", sep = "")
+outPrefix <- paste(outDir, "/02_topGO/topGO_", s1, ".", s2, "_common", sep = "")
 
 commonTargets <- intersect(s1Targets$geneId, s2Targets$geneId)
 
@@ -134,7 +134,7 @@ aligned_plots <- align_plots(
   plotlist = list(tf1 = tf1GoScatter, tf2 = tf2GoScatter, common = commonGoScatter),
   align = "v")
 
-pdf(file = paste(outDir, "/topGO/topGO_enrichment.pdf", sep = ""), width = 12, height = 12, onefile = T, pointsize = 18)
+pdf(file = paste(outDir, "/02_topGO/topGO_enrichment.pdf", sep = ""), width = 12, height = 12, onefile = T, pointsize = 18)
 ggdraw(aligned_plots$tf1)
 ggdraw(aligned_plots$tf2)
 ggdraw(aligned_plots$common)

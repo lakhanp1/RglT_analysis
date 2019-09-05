@@ -19,19 +19,18 @@ library(here)
 
 rm(list = ls())
 
-source("E:/Chris_UM/GitHub/omics_util/RNAseq_scripts/DESeq2_functions.R")
+source("E:/Chris_UM/GitHub/omics_util/RNAseq_scripts/s02_DESeq2_functions.R")
 
-analysisName <- "5A9_AA_vs_CEA17_AA"
+analysisName <- "5A9_AA_vs_CEA17_AA_tmp"
 
-file_sampleInfo <- here::here("analysis", "RNAseq_data", "sampleInfo.txt")
+file_sampleInfo <- here::here("analysis", "01_RNAseq_data", "sampleInfo.txt")
 
 ## the denominator or WT in log2(fold_change) should be second
 compare <- c("5A9_AA", "CEA17_AA")
 
-outDir <- here::here("analysis", "RNAseq_data", analysisName)
+outDir <- here::here("analysis", "01_RNAseq_data", analysisName)
 outPrefix <- paste(outDir, analysisName, sep = "/")
 
-file_geneInfo <- "E:/Chris_UM/Database/A_fumigatus_293_version_s03-m05-r06/A_fumigatus_Af293_version_s03-m05-r09_geneInfo.tab"
 orgDb <- org.AFumigatus293.eg.db
 
 
@@ -53,7 +52,12 @@ exptInfo <- read.table(file = file_sampleInfo, header = T, sep = "\t", stringsAs
 ## set the reference levels
 exptInfo$genotype <- factor(exptInfo$genotype, levels = c("CEA17", "5A9"))
 exptInfo$treatment <- factor(exptInfo$treatment, levels = c("C", "AA"))
-exptInfo$condition <- factor(exptInfo$condition, levels = c("CEA17_C", "5A9_C", "CEA17_AA", "5A9_AA"))
+
+## ensure that reference level is same as compare[2] in the factor
+exptInfo$condition <- factor(
+  x = exptInfo$condition,
+  levels = c(rev(compare), setdiff(unique(exptInfo$condition), compare))
+)
 
 rownames(exptInfo) <- exptInfo$sampleId
 
@@ -67,7 +71,7 @@ design <- ~ condition
 ## import counts data: either by tximport or as raw count matrix
 
 # ## import the counts data using tximport and run DESeq2
-# path_stringtie <- here::here("data", "stringTie", "stringTie_CAur")
+# path_stringtie <- here::here("data", "stringTie")
 # filesStringtie <- paste(path_stringtie, "/stringTie_", exptInfo$sampleId, "/t_data.ctab", sep = "")
 # names(filesStringtie) <- exptInfo$sampleId
 # 
@@ -86,7 +90,7 @@ design <- ~ condition
 
 
 ## import raw counts data and run DESeq2
-file_rawCounts <- here::here("analysis", "RNAseq_data", "MatrixCountsPerGeneBySample.txt")
+file_rawCounts <- here::here("analysis", "01_RNAseq_data", "MatrixCountsPerGeneBySample.txt")
 
 countsDf <- suppressMessages(readr::read_tsv(file = file_rawCounts, col_names = T)) %>%
   as.data.frame()
@@ -337,13 +341,13 @@ markGenes <- c()
 # tmpDf = filter(diffData, geneName %in% markGenes)
 
 plotTitle <- paste("Volcano plot:", compare[1], "vs", compare[2], sep = " ")
-p2 <- volcanoPlot(df = diffData, 
-                  title = plotTitle, 
-                  fdr_col = "padj", 
-                  lfc_col = "shrinkLog2FC",
-                  fdr_Cut = FDR_cut, lfc_cut = lfc_cut,
-                  geneOfInterest = markGenes,
-                  ylimit = 15, xlimit = c(-5, 5))
+p2 <- volcano_plot(df = diffData, 
+                   title = plotTitle, 
+                   fdr_col = "padj", 
+                   lfc_col = "shrinkLog2FC", 
+                   fdr_cut = FDR_cut, lfc_cut = lfc_cut,
+                   geneOfInterest = markGenes,
+                   ylimit = 15, xlimit = c(-5, 5))
 
 # png(filename = paste(outPrefix, "_volcano.png", sep = ""), width = 3000, height = 3000, res = 230)
 pdf(file = paste(outPrefix, ".volcano.pdf", sep = ""), width = 8, height = 10)
