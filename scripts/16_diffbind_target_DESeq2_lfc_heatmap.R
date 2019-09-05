@@ -4,7 +4,7 @@ library(org.AFumigatus293.eg.db)
 
 rm(list = ls())
 
-outDir <- here::here("analysis", "03_integration_analysis", "diffbind_RNAseq_heatmap")
+outDir <- here::here("analysis", "integration_analysis", "diffbind_RNAseq_heatmap")
 
 if(!dir.exists(outDir)){
   dir.create(path = outDir)
@@ -13,31 +13,38 @@ if(!dir.exists(outDir)){
 ##################################################################################
 orgDb <- org.AFumigatus293.eg.db
 
-file_diffbindTargets <- here::here("analysis", "02_ChIPseq_analysis",
-                                   "01_peak_targets", "diffbind_allPeak_targets.tab")
-file_diffbindRes <- here::here("analysis", "02_ChIPseq_analysis", "03_diffBind",
-                               "creE_diffbind.annotation.filtered.tab")
+file_diffbindTargets <- here::here("analysis", "ChIPseq_analysis",
+                                   "peak_targets", "diffbind_allPeak_targets.tab")
+file_diffbindRes <- here::here("analysis", "ChIPseq_analysis", "diffBind", "creE_diffbind.annotation.filtered.tab")
 file_exptInfo <- here::here("data", "referenceData/sampleInfo.txt")
 TF_dataPath <- here::here("data", "TF_data")
-file_markGenes <- paste(outDir, "/", "highlight_genes.txt",  sep = "")
 
 chipSamples <- c("CREEHA_CONTROL4", "CREEHA_10MMAA4")
 diffbindCompare <- c("CREEHA_CONTROL", "CREEHA_10MMAA")
 
-## "CEA17_AA_CEA17_C", "X5A9_AA_X5A9_C", "X5A9_C_CEA17_C", "X5A9_AA_CEA17_AA"
+## "CEA17_AA_vs_CEA17_C", "5A9_AA_vs_5A9_C", "5A9_C_vs_CEA17_C", "5A9_AA_vs_CEA17_AA"
 
 # degResultIds <- c("CEA17_AA_vs_CEA17_C", "5A9_AA_vs_5A9_C")
 # select_only_degs <- FALSE
-analysisName <- "5A9_vs_CEA17"
-degResultIds <- c("X5A9_C_CEA17_C", "X5A9_AA_CEA17_AA")
+analysisName <- "5A9_C_vs_CEA17_C"
+degResultIds <- c("5A9_C_vs_CEA17_C")
 select_only_degs <- TRUE
 
-outPrefix <- paste(outDir, "/", analysisName, ".goodPeaks",  sep = "")
+outPrefix = paste(outDir, "/", analysisName, ".goodPeaks",  sep = "")
 
-file_rnaseq <- here::here("analysis", "01_RNAseq_data", "RNAseq_edgeR_all.txt")
+file_deseq2 <- purrr::map_dfr(
+  .x = degResultIds,
+  .f = function(x){
+    list(
+      diffPair = x,
+      file_diff = here::here("analysis", "RNAseq_data", x, paste(x, ".DEG_all.txt", sep = "")),
+      file_deseq2 = here::here("analysis", "RNAseq_data", x, paste(x, ".DESeq2.tab", sep = "")),
+      file_rld = here::here("analysis", "RNAseq_data", x, paste(x, ".rlogCounts.tab", sep = ""))
+    )
+  })
 
 FDR_cut <- 0.05
-lfc_cut <- 1          ## 0.585
+lfc_cut <- 0.585
 up_cut <- lfc_cut
 down_cut <- lfc_cut * -1
 
@@ -52,8 +59,8 @@ grp2Specific = paste(grp2, ":specific", sep = "")
 ## get the sample details
 exptData <- get_sample_information(exptInfoFile = file_exptInfo,
                                    samples = chipSamples,
-                                   dataPath = TF_dataPath, 
-                                   profileMatrixSuffix = "normalizedmatrix")
+                                   dataPath = TF_dataPath,
+                                   matrixSource = "normalizedmatrix")
 
 exptDataList <- purrr::transpose(exptData) %>%
   purrr::set_names(nm = purrr::map(., "sampleId"))
@@ -70,11 +77,9 @@ tfCols <- sapply(
 ## or use org.db
 geneSym <- AnnotationDbi::select(x = orgDb,
                                  keys = keys(orgDb, keytype = "GID"),
-                                 columns = c("GENE_NAME"),
+                                 columns = c("DESCRIPTION"),
                                  keytype = "GID") %>% 
   dplyr::rename(geneId = GID)
-
-markGenes <- suppressMessages(readr::read_tsv(file = file_markGenes))
 
 ##################################################################################
 ## prepare ChIPseq target data
@@ -86,76 +91,82 @@ targetSet <- suppressMessages(readr::read_tsv(file = file_diffbindTargets, col_n
 
 targetSet <- dplyr::filter(targetSet, pvalFilteredN > 0)
 
+diffbindRes <- suppressMessages(readr::read_tsv(file = file_diffbindRes, col_names = T)) %>% 
+  dplyr::select(name, Fold)
+
+targetSet <- dplyr::left_join(targetSet, diffbindRes, by = "name") %>% 
+  dplyr::distinct()
+  
 
 dplyr::group_by_at(targetSet, .vars = vars(starts_with("categoryDiffbind"))) %>% 
   dplyr::summarise(n = n())
 
 ##################################################################################
 ## prepare RNAseq data
-
-degData <- suppressMessages(readr::read_tsv(file = file_rnaseq)) %>%
-  dplyr::filter(Contrast %in% degResultIds) %>% 
-  dplyr::filter(FDR <= FDR_cut, abs(logFC) > lfc_cut)
-
-degData$Contrast <- factor(x = degData$Contrast, levels = degResultIds)
-
-degTable <- data.table::dcast(
-  data = as.data.table(degData), formula = GeneID ~ Contrast,
-  value.var = c("logFC", "FDR", "DECall"),
-  sep = "."
-) %>% 
-  as_tibble()
-
-# ## function to extract the log2FoldChange, padj and diff coulumns for each DEG result file
-# get_foldchange <- function(degFile, name){
-#   
-#   lfcCol <- "shrinkLog2FC"
-#   fdrCol <- "padj"
-#   diffCol <- "diff_shrink_l2fc"
-#   
-#   degs <- fread(file = degFile, sep = "\t", header = T, stringsAsFactors = F)
-#   
-#   newColName <- structure(c(lfcCol, fdrCol, diffCol),
-#                           names = paste(c("log2FC.", "padj.", "diff."), name, sep = ""))
-#   
-#   
-#   df <- degs %>%
-#     dplyr::mutate(
-#       !!lfcCol := if_else(condition = !!as.name(fdrCol) < FDR_cut,
-#                           true = !!as.name(lfcCol), false = 0)
-#     ) %>% 
-#     tidyr::replace_na(purrr::set_names(list(0), nm = c(lfcCol))) %>% 
-#     dplyr::select(geneId, !!!c(lfcCol, fdrCol, diffCol)) %>%
-#     dplyr::rename(!!!newColName )
-#   
-#   return(df)
-# }
 # 
+# diffPairs <- c("CEA17_AA_CEA17_C", "X5A9_AA_CEA17_AA", "X5A9_AA_X5A9_C", "X5A9_C_CEA17_C")
 # 
-# i <- 1
+# degData <- suppressMessages(readr::read_tsv(file = file_deg)) %>% 
+#   dplyr::filter(Contrast %in% diffPairs)
 # 
-# for(i in 1:nrow(file_deseq2)){
-#   dt <- get_foldchange(degFile = file_deseq2$file_diff[i], name = file_deseq2$diffPair[i])
-#   geneSym <- dplyr::left_join(geneSym, dt, by = c("geneId" = "geneId"))
-# }
+# degTable <- dplyr::select(degData, Contrast, GeneID, logFC) %>% 
+#   tidyr::spread(key = Contrast, value = logFC, fill = 0)
 # 
-# degTable <- dplyr::select(geneSym, geneId, starts_with("log2FC."))
-# colnames(degTable) <- gsub(pattern = "log2FC.", replacement = "", x = colnames(degTable))
+# deseqDf <- suppressMessages(readr::read_tsv(file = file_deseq2)) %>% 
+#   dplyr::filter(padj < 0.05)
+# 
+# degTable <- dplyr::left_join(x = degTable, y = dplyr::select(deseqDf, geneId, log2FoldChange),
+#                              by = c("GeneID" = "geneId")) %>% 
+#   dplyr::rename(AA_vs_C = log2FoldChange)
+
+
+## function to extract the log2FoldChange, padj and diff coulumns for each DEG result file
+get_foldchange <- function(degFile, name){
+  
+  lfcCol <- "shrinkLog2FC"
+  fdrCol <- "padj"
+  diffCol <- "diff_shrink_l2fc"
+  
+  degs <- fread(file = degFile, sep = "\t", header = T, stringsAsFactors = F)
+  
+  newColName <- structure(c(lfcCol, fdrCol, diffCol),
+                          names = paste(c("log2FC.", "padj.", "diff."), name, sep = ""))
+  
+  
+  df <- degs %>%
+    dplyr::mutate(
+      !!lfcCol := if_else(condition = !!as.name(fdrCol) < FDR_cut,
+                          true = !!as.name(lfcCol), false = 0)
+    ) %>% 
+    tidyr::replace_na(purrr::set_names(list(0), nm = c(lfcCol))) %>% 
+    dplyr::select(geneId, !!!c(lfcCol, fdrCol, diffCol)) %>%
+    dplyr::rename(!!!newColName )
+  
+  return(df)
+}
+
+
+i <- 1
+
+for(i in 1:nrow(file_deseq2)){
+  dt <- get_foldchange(degFile = file_deseq2$file_diff[i], name = file_deseq2$diffPair[i])
+  geneSym <- dplyr::left_join(geneSym, dt, by = c("geneId" = "geneId"))
+}
+
+degTable <- dplyr::select(geneSym, geneId, starts_with("log2FC."))
+colnames(degTable) <- gsub(pattern = "log2FC.", replacement = "", x = colnames(degTable))
 
 ##################################################################################
 
-mergedData <- dplyr::left_join(x = targetSet, y = geneSym, by = c("geneId" = "geneId")) %>% 
-  dplyr::left_join(y = degTable, by = c("geneId" = "GeneID"))
+mergedData <- dplyr::left_join(x = targetSet, y = geneSym, by = c("geneId" = "geneId"))
 
 ## optionally select only those genes which are DEGs as per RNAseq
 if(select_only_degs){
-  mergedData <- dplyr::filter_at(.tbl = mergedData, .vars = vars(starts_with("DECall.")),
-                                 .vars_predicate = any_vars(. %in% c("up", "down")))
+  mergedData <- dplyr::filter_at(.tbl = mergedData, .vars = vars(starts_with("diff.")),
+                                 .vars_predicate = any_vars(. != "noDEG"))
 }
 
 readr::write_tsv(x = mergedData, path = paste(outPrefix, ".data.tab", sep = ""))
-
-
 
 ##################################################################################
 ## plotting
@@ -174,18 +185,12 @@ plotData <- mergedData %>%
   dplyr::slice(1L) %>% 
   dplyr::ungroup()
 
-lfcCols <- grep(pattern = "^logFC.", x = colnames(plotData), perl = T, value = T)
-
-plotData <- tidyr::replace_na(
-  data = plotData,
-  replace = purrr::map(.x = lfcCols, .f = ~ 0) %>% purrr::set_names(nm = lfcCols)
-) %>% 
-  dplyr::left_join(y = markGenes, by = "geneId")
+lfcCols <- grep(pattern = "^log2FC.", x = colnames(plotData), perl = T, value = T)
 
 hasPeakMat <- as.matrix(plotData[tfCols$hasPeak[c(tf1Id, tf2Id)]])
 row.names(hasPeakMat) <- plotData$rowKey
 
-peakDiffMat <- as.matrix(plotData["DiffBind.foldChange"])
+peakDiffMat <- as.matrix(plotData["Fold"])
 row.names(peakDiffMat) <- plotData$rowKey
 
 lfcMat <- as.matrix(plotData[, lfcCols])
@@ -233,21 +238,12 @@ ht2 <- Heatmap(
   width = unit(2, "cm")
 )
 
-markAn <- rowAnnotation(
-  genes = anno_mark(
-    at = which(!is.na(plotData$markLabel)),
-    labels = na.exclude(plotData$markLabel),
-    labels_gp = gpar(fontface = "italic")
-  )
-)
-
 ht3 <- Heatmap(
   matrix = lfcMat,
   name = "lfc",
   col = colorRamp2(breaks = -3:3, colors = RColorBrewer::brewer.pal(n = 7, name = "PuOr")),
   na_col = "white",
-  column_labels = gsub(pattern = "logFC.", replacement = "", colnames(lfcMat)),
-  right_annotation = markAn,
+  column_labels = gsub(pattern = "log2FC.", replacement = "", colnames(lfcMat)),
   show_row_dend = F, show_column_dend = F, cluster_columns = F,
   show_row_names = F,
   row_title_rot = 0,
@@ -264,7 +260,6 @@ htList <- ht1 + ht2 + ht3
 plotTitle <- paste("rglT ChIPseq and", analysisName, "comparison RNAseq data")
 
 png(file = paste(outPrefix, ".heatmap.png", sep = ""), width = 3000, height = 3000, res = 250)
-
 draw(object = htList,
      main_heatmap = "lfc",
      split = plotData$categoryDiffbind,
