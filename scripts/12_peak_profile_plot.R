@@ -5,7 +5,7 @@ library(chipmine)
 
 rm(list = ls())
 
-outDir <- here::here("analysis", "ChIPseq_analysis", "diffBind")
+outDir <- here::here("analysis", "02_ChIPseq_analysis", "03_diffBind")
 
 if(!dir.exists(outDir)){
   dir.create(path = outDir)
@@ -18,9 +18,10 @@ compare <- c("CREEHA_CONTROL", "CREEHA_10MMAA")
 
 ##################################################################################
 
-file_diffbindInfo <- here::here("analysis", "ChIPseq_analysis", "diffBind", "sampleInfo.txt")
+file_diffbindInfo <- here::here("analysis", "02_ChIPseq_analysis", "03_diffBind", "sampleInfo.txt")
 file_exptInfo <- here::here("data", "referenceData/sampleInfo.txt")
-file_diffbindRes <- here::here("analysis", "ChIPseq_analysis", "diffBind", "creE_diffbind.annotation.filtered.tab")
+file_diffbindRes <- here::here("analysis", "02_ChIPseq_analysis", "03_diffBind",
+                               "creE_diffbind.annotation.filtered.tab")
 TF_dataPath <- here::here("data", "TF_data")
 
 sampleInfo <- suppressMessages(readr::read_tsv(file = file_diffbindInfo))
@@ -28,7 +29,7 @@ sampleInfo <- suppressMessages(readr::read_tsv(file = file_diffbindInfo))
 ## get the sample details
 exptData <- get_sample_information(exptInfoFile = file_exptInfo,
                                    dataPath = TF_dataPath,
-                                   matrixSource = "normalizedmatrix")
+                                   profileMatrixSuffix = "normalizedmatrix")
 
 exptDataList <- purrr::transpose(exptData) %>%
   purrr::set_names(nm = purrr::map(., "sampleId"))
@@ -62,7 +63,53 @@ diffbindRes <- suppressMessages(readr::read_tsv(file = file_diffbindRes)) %>%
 
 diffGr <- GenomicRanges::makeGRangesFromDataFrame(diffbindRes, keep.extra.columns = T)
 
-peakCenterGr <- GenomicRanges::resize(x = diffGr, fix = "center", width = 1, use.names = T)
+#######################
+## get the average summit position
+peakList <- GenomicRanges::GRangesList(
+  lapply(X = exptData$peakFile[c(grp1Index, grp2Index)],
+         FUN = rtracklayer::import, format = "narrowPeak")
+)
+
+names(peakList) <- exptData$sampleId[c(grp1Index, grp2Index)]
+
+# pgr <- peakList$CREEHA_CONTROL4
+## find overlap of each peak GR with diffGr.
+## if multiple peaks overlap with a diffGr, select strongest
+ovPk <- endoapply(
+  X = peakList,
+  FUN = function(pgr){
+    ovlp <- findOverlaps(query = diffGr, subject = pgr)
+    opgr <- pgr[ovlp@to]
+    mcols(opgr)$diffGrId <- ovlp@from
+    opgr <- as.data.frame(opgr) %>% 
+      dplyr::group_by(diffGrId) %>% 
+      dplyr::arrange(desc(pValue)) %>% 
+      dplyr::slice(1L) %>% 
+      GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+    
+    return(opgr)
+  })
+
+combinedPeaks <- unlist(ovPk)
+
+summitPos <- GenomicRanges::resize(
+  x = GenomicRanges::shift(x = combinedPeaks, shift = combinedPeaks$peak),
+  width = 1, fix = "start"
+)
+
+avgSummit <- as.data.frame(x = summitPos, row.names = NULL) %>% 
+  dplyr::group_by(diffGrId) %>% 
+  dplyr::summarise(meanSummit = round(mean(start)))
+
+diffGr$avgSummit[avgSummit$diffGrId] <- avgSummit$meanSummit
+
+#######################
+
+# peakCenterGr <- GenomicRanges::resize(x = diffGr, fix = "center", width = 1, use.names = T)
+peakCenterGr <- GRanges(seqnames = seqnames(diffGr),
+                        ranges = IRanges(start = diffGr$avgSummit, width = 1))
+
+mcols(peakCenterGr) <- mcols(diffGr)
 
 which(table(diffGr$name) > 1)
 
@@ -112,7 +159,8 @@ tfColorList <- sapply(
   X = exptData$sampleId,
   FUN = function(x){
     return(colorRamp2(breaks = quantile(tfMeanProfile, c(0.50, 0.995), na.rm = T),
-                      colors = c("white", "red")))
+                      colors = unlist(strsplit(x = exptDataList[[x]]$color, split = ",")))
+    )
   }
 )
 
@@ -122,16 +170,18 @@ ylimList <- list(
   CREEHA_10MMAA4 = c(0, 115), CREEHA_10MMAA5 = c(0, 115), WT_10MMAA5 = c(0, 70)
 )
 
-profilePlots <- multi_profile_plots(exptInfo = exptData, genesToPlot = diffGr$name,
-                                    profileColors = tfColorList,
-                                    clusters = dplyr::select(peakDiffAn, geneId, cluster),
-                                    showAnnotation = FALSE,
-                                    clustOrd = levels(peakDiffAn$cluster),
-                                    targetType = "point",
-                                    targetName = "center",
-                                    matBins = c(100, 0, 100, 10), matSource = "normalizedmatrix",
-                                    column_title_gp = gpar(fontsize = 12),
-                                    ylimFraction = ylimList)
+profilePlots <- multi_profile_plots(
+  exptInfo = exptData, genesToPlot = diffGr$name,
+  profileColors = tfColorList,
+  clusters = dplyr::select(peakDiffAn, geneId, cluster),
+  showAnnotation = FALSE,
+  clustOrd = levels(peakDiffAn$cluster),
+  targetType = "point",
+  targetName = "summit",
+  matBins = c(100, 0, 100, 10), matSource = "normalizedmatrix",
+  column_title_gp = gpar(fontsize = 12),
+  ylimFraction = ylimList
+)
 
 
 
