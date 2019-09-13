@@ -97,61 +97,37 @@ Chr4_A_fumigatus_Af293:2,232,248-2,241,210
 ######################################
 ####   Motif enrichment analysis  ####
 ######################################
-## meme-chip on combined data: 200bp
-meme-chip -order 1 -meme-minw 6 -meme-maxw 30 -meme-nmotifs 10 -dreme-e 0.05 -centrimo-score 5.0 -centrimo-ethresh 10.0 -meme-p 6 \
--oc meme_CREEHA_combined_200bp -desc meme_CREEHA_combined_200bp \
--neg /home/lakhanp/database/A_fumigatus/Af293_version_s03-m05-r06/reference/A_fumigatus_Af293.CDS.upstream200.seq.fasta \
--db /home/lakhanp/tools/meme-5.0.4/db/motif_databases/JASPAR/JASPAR2018_CORE_fungi_non-redundant.meme \
-creE_combined.summit_200bp.fasta
 
-## meme-chip on combined data: 500bp
-meme-chip -order 1 -meme-minw 6 -meme-maxw 30 -meme-nmotifs 10 -dreme-e 0.05 -centrimo-score 5.0 -centrimo-ethresh 10.0 -meme-p 6 \
--oc meme_CREEHA_combined_500bp -desc meme_CREEHA_combined_500bp \
--neg /home/lakhanp/database/A_fumigatus/Af293_version_s03-m05-r06/reference/A_fumigatus_Af293.CDS.upstream500.seq.fasta \
--db /home/lakhanp/tools/meme-5.0.4/db/motif_databases/JASPAR/JASPAR2018_CORE_fungi_non-redundant.meme \
-creE_combined.summit_500bp.fasta
+{
+## meme-chip analysis: with control
+while IFS=$'\t' read -r name fasta neg
+do
+	printf "## meme-chip: ${name}\n"
+	#printf "## meme-chip: ${name}
+	meme-chip -order 1 -meme-minw 5 -meme-maxw 30 -meme-nmotifs 5 -meme-mod anr -meme-p 12 \
+	-db /home/lakhanp/tools/meme-5.0.4/db/motif_databases/JASPAR/JASPAR2018_CORE_fungi_non-redundant.meme \
+	-desc ${name} -oc ${name} -neg ${neg} ${fasta} < /dev/null
+	#"
+	printf "## done...\n\n"
+done < memechip_de_conf.tab
+}
 
-## meme-chip on combined stranded summit data: 500bp
-meme-chip -order 1 -meme-minw 6 -meme-maxw 30 -meme-nmotifs 10 -dreme-e 0.05 -centrimo-score 5.0 -centrimo-ethresh 10.0 -meme-p 6 \
--oc rglT_combined.summit_stranded.500bp -desc meme_RglT_combined_500bp \
--neg /home/lakhanp/database/A_fumigatus/Af293_version_s03-m05-r06/reference/A_fumigatus_Af293.CDS.upstream500.seq.fasta \
--db /home/lakhanp/tools/meme-5.0.4/db/motif_databases/JASPAR/JASPAR2018_CORE_fungi_non-redundant.meme \
-rglT_combined.summit_stranded.500bp.fasta
+{
+## meme-chip analysis: without control
+while IFS=$'\t' read -r name fasta
+do
+	printf "## meme-chip: ${name}\n"
+	#printf "## meme-chip: ${line[0]}
+	meme-chip -order 1 -meme-minw 5 -meme-maxw 30 -meme-nmotifs 5 -meme-mod anr -meme-p 12 \
+	-db /home/lakhanp/tools/meme-5.0.4/db/motif_databases/JASPAR/JASPAR2018_CORE_fungi_non-redundant.meme \
+	-desc ${name} -oc ${name} ${fasta} < /dev/null
+	#"
+	printf "## done...\n\n"
+done < memechip_conf.tab
+}
 
-## CREEHA_CONTROL_enriched: 500bp
-meme-chip -order 1 -meme-minw 6 -meme-maxw 30 -meme-nmotifs 10 -dreme-e 0.05 -centrimo-score 5.0 -centrimo-ethresh 10.0 -meme-p 6 \
--oc meme_CREEHA_CONTROL_enriched_500bp -desc meme_CREEHA_CONTROL_enriched_500bp \
--neg /home/lakhanp/database/A_fumigatus/Af293_version_s03-m05-r06/reference/A_fumigatus_Af293.CDS.upstream500.seq.fasta \
--db /home/lakhanp/tools/meme-5.0.4/db/motif_databases/JASPAR/JASPAR2018_CORE_fungi_non-redundant.meme \
-CREEHA_CONTROL_enriched.summits_500.fasta
 
-## CREEHA_10MMAA_enriched: 500bp
-meme-chip -order 1 -meme-minw 6 -meme-maxw 30 -meme-nmotifs 10 -dreme-e 0.05 -centrimo-score 5.0 -centrimo-ethresh 10.0 -meme-p 6 \
--oc meme_CREEHA_10MMAA_enriched_500bp -desc meme_CREEHA_10MMAA_enriched_500bp \
--neg /home/lakhanp/database/A_fumigatus/Af293_version_s03-m05-r06/reference/A_fumigatus_Af293.CDS.upstream500.seq.fasta \
--db /home/lakhanp/tools/meme-5.0.4/db/motif_databases/JASPAR/JASPAR2018_CORE_fungi_non-redundant.meme \
-CREEHA_10MMAA_enriched.summits_500.fasta
 
-## CREEHA_CONTROL_specific: 500bp
-meme-chip -order 1 -meme-minw 6 -meme-maxw 30 -meme-nmotifs 10 -dreme-e 0.05 -centrimo-score 5.0 -centrimo-ethresh 10.0 -meme-p 6 \
--oc meme_CREEHA_CONTROL_specific_500bp -desc meme_CREEHA_CONTROL_specific_500bp \
--neg /home/lakhanp/database/A_fumigatus/Af293_version_s03-m05-r06/reference/A_fumigatus_Af293.CDS.upstream500.seq.fasta \
--db /home/lakhanp/tools/meme-5.0.4/db/motif_databases/JASPAR/JASPAR2018_CORE_fungi_non-redundant.meme \
-CREEHA_CONTROL_specific.summits_500.fasta
-
-## CREEHA_10MMAA_specific: 500bp
-meme-chip -order 1 -meme-minw 6 -meme-maxw 30 -meme-nmotifs 10 -dreme-e 0.05 -centrimo-score 5.0 -centrimo-ethresh 10.0 -meme-p 6 \
--oc meme_CREEHA_10MMAA_specific_500bp -desc meme_CREEHA_10MMAA_specific_500bp \
--neg /home/lakhanp/database/A_fumigatus/Af293_version_s03-m05-r06/reference/A_fumigatus_Af293.CDS.upstream500.seq.fasta \
--db /home/lakhanp/tools/meme-5.0.4/db/motif_databases/JASPAR/JASPAR2018_CORE_fungi_non-redundant.meme \
-CREEHA_10MMAA_specific.summits_500.fasta
-
-## CONTROL_10MMAA_common: 500bp
-meme-chip -order 1 -meme-minw 6 -meme-maxw 30 -meme-nmotifs 10 -dreme-e 0.05 -centrimo-score 5.0 -centrimo-ethresh 10.0 -meme-p 6 \
--oc meme_CONTROL_10MMAA_common_500bp -desc meme_CONTROL_10MMAA_common_500bp \
--neg /home/lakhanp/database/A_fumigatus/Af293_version_s03-m05-r06/reference/A_fumigatus_Af293.CDS.upstream500.seq.fasta \
--db /home/lakhanp/tools/meme-5.0.4/db/motif_databases/JASPAR/JASPAR2018_CORE_fungi_non-redundant.meme \
-CONTROL_10MMAA_common.500bp_summit.fasta
 
 ##fimo_500
 fimo -oc fimo_motif_scan_500 --thresh 0.001 --bfile /home/lakhanp/database/A_fumigatus/Af293_version_s03-m05-r06/reference/A_fumigatus_Af293.CDS.upstream500.meme_background.m2.model selected_motifs.meme.txt creE_diffbind_targets.summit_500.fasta
