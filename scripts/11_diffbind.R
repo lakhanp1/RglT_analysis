@@ -228,7 +228,7 @@ diffData <- diffData %>%
 ## import peak annotation for sample1 and add new column with pval cutoff pass result
 s1Targets <- import_peak_annotation(
   sampleId = bestGrp1Id,
-  peakAnnoFile = exptDataList[[bestGrp1Id]]$narrowpeakAnno,
+  peakAnnoFile = exptDataList[[bestGrp1Id]]$peakAnno,
   columns = c("peakId", "geneId", "peakPosition", "peakType", "peakDist")
 ) %>% 
   dplyr::filter(!is.na(geneId)) %>% 
@@ -239,7 +239,7 @@ s1Targets <- import_peak_annotation(
 ## import peak annotation for sample2 and add new column with pval cutoff pass result
 s2Targets <- import_peak_annotation(
   sampleId = bestGrp2Id,
-  peakAnnoFile = exptDataList[[bestGrp2Id]]$narrowpeakAnno,
+  peakAnnoFile = exptDataList[[bestGrp2Id]]$peakAnno,
   columns = c("peakId", "geneId", "peakPosition", "peakType", "peakDist")
 ) %>% 
   dplyr::filter(!is.na(geneId)) %>% 
