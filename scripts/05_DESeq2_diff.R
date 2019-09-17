@@ -3,8 +3,11 @@ library(tidyverse)
 library(data.table)
 library(ggrepel)
 library(tximport)
-library(org.AFumigatus293.eg.db)
 library(here)
+library(RColorBrewer)
+library(ComplexHeatmap)
+library(circlize)
+library(org.AFumigatus.Af293.eg.db)
 
 
 ## This script:
@@ -19,19 +22,20 @@ library(here)
 
 rm(list = ls())
 
-source("E:/Chris_UM/GitHub/omics_util/RNAseq_scripts/s02_DESeq2_functions.R")
+source("E:/Chris_UM/GitHub/omics_util/02_RNAseq_scripts/s02_DESeq2_functions.R")
 
-analysisName <- "5A9_AA_vs_CEA17_AA_tmp"
+analysisName <- "CEA17_AA_vs_CEA17_C"
 
 file_sampleInfo <- here::here("analysis", "01_RNAseq_data", "sampleInfo.txt")
 
+## CEA17_AA, 5A9_AA, CEA17_C, 5A9_C
 ## the denominator or WT in log2(fold_change) should be second
-compare <- c("5A9_AA", "CEA17_AA")
+compare <- c("CEA17_AA", "CEA17_C")
 
 outDir <- here::here("analysis", "01_RNAseq_data", analysisName)
 outPrefix <- paste(outDir, analysisName, sep = "/")
 
-orgDb <- org.AFumigatus293.eg.db
+orgDb <- org.AFumigatus.Af293.eg.db
 
 
 if(!dir.exists(outDir)){
@@ -46,7 +50,6 @@ down_cut <- lfc_cut * -1
 
 ###########################################################################
 ## set levels for experiment design information
-
 exptInfo <- read.table(file = file_sampleInfo, header = T, sep = "\t", stringsAsFactors = F)
 
 ## set the reference levels
@@ -78,19 +81,20 @@ design <- ~ condition
 # tmp <- data.table::fread(file = filesStringtie[1], sep = "\t", header = T, stringsAsFactors = F)
 # tx2gene <- tmp[, c("t_name", "gene_id")]
 # 
-# txi <- tximport(files = filesStringtie, type = "stringtie", tx2gene = tx2gene)
+# txi <- tximport(files = filesStringtie, type = "stringtie",
+#                 tx2gene = tx2gene, readLength = readLength)
 # 
 # ddsTxi <- DESeqDataSetFromTximport(txi = txi, colData = exptInfo, design = design)
-# assay(ddsTxi)
-# colData(ddsTxi)
-# rowData(ddsTxi)
+# # assay(ddsTxi)
+# # colData(ddsTxi)
+# # rowData(ddsTxi)
 # 
 # ## Run DESeq2
 # dds <- DESeq(ddsTxi)
 
 
 ## import raw counts data and run DESeq2
-file_rawCounts <- here::here("analysis", "01_RNAseq_data", "MatrixCountsPerGeneBySample.txt")
+file_rawCounts <- here::here("analysis", "01_RNAseq_data", "MatrixCountsPerGeneBySample.Reneto.tab")
 
 countsDf <- suppressMessages(readr::read_tsv(file = file_rawCounts, col_names = T)) %>%
   as.data.frame()
@@ -116,30 +120,27 @@ dds <- DESeq(ddsCount)
 
 ###########################################################################
 ## Add gene symbol for each Ensembl ID
+geneInfo <- AnnotationDbi::select(x = orgDb,
+                                  keys = keys(orgDb, keytype = "GID"),
+                                  columns = c("GENE_NAME", "DESCRIPTION"),
+                                  keytype = "GID") %>% 
+  dplyr::rename(geneId = GID)
+
 
 ## Make sure to merge the geneIds which are duplicated using group_by + summarize_all and remove the NA strings in data frame by replacing it with real <NA>
-## geneSym <- read.table(file = ensToGeneId, sep = "\t", header = T, stringsAsFactors = F, na.strings = "") %>%
-##   group_by(geneId) %>% summarize_all(.funs = funs(paste0(unique(.), collapse = ","))) %>% 
-##   mutate_all(.funs = funs(ifelse(. == "NA", NA, .)))
-##
-## OR just take first row in case of duplicate rows 
-# geneSym <- fread(file = geneInfoFile, sep = "\t", header = T, stringsAsFactors = F, na.strings = "") %>%
-#   distinct(geneId, .keep_all = T)
-
-
-## use org.db
-geneSym <- AnnotationDbi::select(x = orgDb,
-                                 keys = keys(orgDb, keytype = "GID"),
-                                 columns = c("DESCRIPTION"),
-                                 keytype = "GID") %>% 
-  dplyr::rename(geneId = GID)
+if(any(duplicated(geneInfo$geneId))){
+  geneInfo <- dplyr::group_by(geneInfo, geneId) %>%
+    summarize_all(.funs = ~ paste0(unique(.), collapse = ","))
+  
+  ## OR just take first row in case of duplicate rows 
+  # geneInfo <- dplyr::distinct(geneInfo, geneId, .keep_all = T)
+}
 
 
 ###########################################################################
 
 ## raw counts
 rawCounts <- tibble::rownames_to_column(as.data.frame(counts(dds, normalized = FALSE)), var = "geneId")
-
 readr::write_tsv(x = rawCounts, path = paste(outPrefix, ".rawCounts.tab", sep = ""))
 
 ## FPKM
@@ -151,14 +152,12 @@ readr::write_tsv(x = rawCounts, path = paste(outPrefix, ".rawCounts.tab", sep = 
 
 ## normalized counts matrix
 normCounts <- tibble::rownames_to_column(as.data.frame(counts(dds, normalized = TRUE)), var = "geneId")
-
 readr::write_tsv(x = normCounts, path = paste0(c(outPrefix,".normCounts.tab"), collapse = ""))
 
 
 ## r-log normalized counts
-rld <- rlog(dds)
+rld <- rlog(dds, blind = FALSE)
 rldCount <- rownames_to_column(as.data.frame(assay(rld)), var = "geneId")
-
 readr::write_tsv(x = rldCount, path = paste(outPrefix, ".rlogCounts.tab", sep = ""))
 
 
@@ -172,34 +171,58 @@ plotPCA(rld, intgroup=c("condition"))
 pcaData <- plotPCA(rld, intgroup=c("condition"), returnData = TRUE)
 percentVar <- sprintf("%.2f", 100 * attr(pcaData, "percentVar"))
 
-pltTitle <- "Principal Component Analysis"
+pltTitle <- paste("Principal Component Analysis:", compare[1], "vs", compare[2])
 pointCol <- base::structure(RColorBrewer::brewer.pal(n = length(unique(pcaData$condition)), name = "Set1"),
                             names = levels(pcaData$condition))
 
 
-p1 <- ggplot(pcaData, aes(x = PC1, y = PC2)) +
-  geom_point(mapping = aes(color = condition), size=10, alpha = 0.8) +
-  # geom_text_repel(mapping = aes(label = name), size = 3, point.padding = 0.5) +
-  geom_hline(yintercept = 0, linetype = 2) + 
+pcaPlot <- ggplot(pcaData, aes(x = PC1, y = PC2)) +
+  geom_point(mapping = aes(color = condition), size=4) +
+  geom_text_repel(mapping = aes(label = name), size = 3, point.padding = 0.5) +
+  geom_hline(yintercept = 0, linetype = 2) +
   geom_vline(xintercept = 0, linetype = 2) +
   xlab(paste0("PC1: ",percentVar[1],"% variance")) +
-  ylab(paste0("PC2: ",percentVar[2],"% variance")) + 
-  scale_color_manual(values = pointCol, name = "Condition") +
-  ggtitle(pltTitle) + 
-  guides(color = guide_legend(override.aes = list(size = 10))) +
+  ylab(paste0("PC2: ",percentVar[2],"% variance")) +
+  scale_color_manual(values = pointCol) +
+  ggtitle(pltTitle) +
   theme_bw() +
   theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
-        axis.text = element_text(size = 24),
-        axis.title = element_text(face = "bold", size = 20),
-        panel.grid = element_blank(),
-        legend.text = element_text(size = 13, face = "bold"),
+        axis.text.x = element_text(size = 13),
+        axis.text.y = element_text(size = 15),
+        axis.title.x = element_text(face = "bold", size = 15),
+        axis.title.y = element_text(face = "bold", size = 15),
+        plot.margin = unit(c(0.5,0.5,0.5,0.5),"cm"),
+        legend.text = element_text(size = 13),
         legend.title = element_text(face = "bold", size = 15)
   )
 
 
-pdf(file = paste(outPrefix, ".PCA.pdf", sep = ""), width = 10, height = 10)
-p1
+png(filename = paste(outPrefix, ".PCA.png", sep = ""), width = 3000, height = 3000, res = 300)
+pcaPlot
 dev.off()
+
+
+sampleDists <- dist(t(assay(rld)))
+sampleDistMatrix <- as.matrix(sampleDists)
+
+
+plot_dist <- ComplexHeatmap::Heatmap(
+  matrix = sampleDistMatrix,
+  col = colorRampPalette( rev(brewer.pal(9, "YlGnBu")) )(255),
+  column_title = "Distance matrix of normalized read counts",
+  column_title_gp = gpar(fontface = "bold", fontsize = 14),
+  heatmap_legend_param = list(title = "Distance", title_gp = gpar(fontsize = 12),
+                              title_position = "topcenter")
+)
+
+
+png(filename = paste(outPrefix, ".distance_heatmap.png", sep = ""),
+    width = 3000, height = 3000, res = 300)
+draw(plot_dist,
+     padding = unit(rep(0.5, 4), "cm")
+)
+dev.off()
+
 
 ###########################################################################
 
@@ -224,15 +247,92 @@ summary(res)
 resShrink <- lfcShrink(dds, coef = coefName,
                        res=res, type="apeglm")
 
-summary(resShrink)
+resultSummary <- paste(capture.output(summary(resShrink))[1:8], collapse = "\n")
+
 mcols(resShrink, use.names=TRUE)
+
+
+fcDensity <- hist(x = pmin(pmax(res$log2FoldChange, -5), 5),
+                  breaks = 50,
+                  main = "log2(fold-change) frequency distribution")
+
+hist(x = res$pvalue, breaks = 100, main = "p-value distribution")
+hist(x = res$pvalue, breaks = c(seq(0, 0.1, length.out = 20), seq(0.11,1, by = 0.01)),
+     main = "p-value distribution")
+
+hist(x = res$padj, breaks = 100, main = "q-value distribution")
+
+lfcFreq <- ggplot() +
+  geom_histogram(
+    data = as.data.frame(res),
+    mapping = aes(x = pmin(pmax(log2FoldChange, -5), 5), y = ..density.. , fill = "unshrunken"),
+    bins = 100, alpha = 0.5) +
+  geom_histogram(
+    data = as.data.frame(resShrink),
+    mapping = aes(x = pmin(pmax(log2FoldChange, -5), 5), y = ..density.. , fill = "shrunken"),
+    bins = 100, alpha = 0.5) +
+  annotate(geom = "text", x = -4.5, y = Inf, label = resultSummary, vjust = 1, hjust = 0) +
+  geom_vline(xintercept = 0, linetype = "dashed", size = 1) +
+  scale_x_continuous(limits = c(-5, 5), expand = expand_scale(mult = 0.01)) +
+  scale_y_continuous(expand = expand_scale(mult = 0.01)) +
+  scale_fill_manual(
+    name = NULL,
+    values = c("unshrunken" = "#999999", "shrunken" = "red"),
+    breaks = c("unshrunken", "shrunken"),
+    labels = c("unshrunken LFC", "shrunken LFC")
+  ) +
+  labs(title = paste("log2(fold change) frequency distribution:", compare[1], "vs", compare[2]),
+       x = "log2(fold change)", y = "Frequency") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+        axis.text = element_text(size = 13),
+        axis.title = element_text(face = "bold", size = 15),
+        panel.grid = element_blank(),
+        plot.margin = unit(c(0.5,0.5,0.5,0.5),"cm"),
+        legend.position = c(0.95, 0.95),
+        legend.justification = c(1, 1),
+        legend.text = element_text(size = 15),
+        legend.key.size = unit(1.2,"cm")
+  )
+
+
+pqDensity <- ggplot(data = as.data.frame(res)) +
+  geom_histogram(mapping = aes(x = pvalue, y = ..density.. , fill = "pvalue"),
+                 bins = 100, alpha = 0.5) +
+  geom_histogram(mapping = aes(x = padj, y = ..density.. , fill = "padj"),
+                 bins = 100, alpha = 0.5) +
+  geom_vline(xintercept = 0.05, linetype = "dashed", color = "red", size = 1) +
+  annotate(geom = "text", x = 0.3, y = Inf, label = resultSummary, vjust = 1) +
+  scale_fill_manual(
+    name = NULL,
+    values = c("pvalue" = "#999999", "padj" = "#E69F00"),
+    breaks = c("pvalue", "padj"),
+    labels = c("p-value", "q-value")
+  ) +
+  scale_x_continuous(expand = expand_scale(mult = 0.01)) +
+  scale_y_continuous(expand = expand_scale(mult = 0.01)) +
+  labs(title = paste("p-value and q-value density distribution:", compare[1], "vs", compare[2]),
+       x = "p-value or q-value", y = "Density") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+        axis.text = element_text(size = 13),
+        axis.title = element_text(face = "bold", size = 15),
+        legend.text = element_text(size = 15),
+        legend.key.size = unit(1.2,"cm"),
+        # legend.direction = "horizontal",
+        panel.grid = element_blank(),
+        plot.margin = unit(c(0.5,0.5,0.5,0.5),"cm"),
+        legend.title = element_text(face = "bold", size = 15),
+        legend.position = c(0.95, 0.95),
+        legend.justification = c(1, 1)
+  )
 
 
 ###########################################################################
 ## MA plot
 # png(filename = paste(outPrefix, ".MA.png", sep = ""), width = 2000, height = 3000, res = 250)
-pdf(file = paste(outPrefix, ".MA.pdf", sep = ""), width = 8, height = 8, onefile = F)
-op <- par(mfrow = c(2, 1))
+# pdf(file = paste(outPrefix, ".MA.pdf", sep = ""), width = 8, height = 10, onefile = F)
+# op <- par(mfrow = c(2, 1))
 
 plotMA(res, ylim=c(-4,4), main = "MA plot with unshrunken LFC")
 plotMA(resShrink, ylim=c(-4,4), main = "MA plot with shrunken log2 fold changes")
@@ -243,21 +343,21 @@ plotMA(resShrink, ylim=c(-4,4), main = "MA plot with shrunken log2 fold changes"
 #   m = res$baseMean,
 #   a = res$log2FoldChange,
 #   c = ifelse(abs(res$log2FoldChange) >= lfc_cut & res$padj <= FDR_cut, TRUE, FALSE)),
-#   ylim=c(-4,4), 
+#   ylim=c(-4,4),
 #   main = "MA plot with unshrunken LFC"
 # )
-# 
+#
 # ## MA plot with apeglm shrunken LFC
 # geneplotter::plotMA(object = data.frame(
 #   m = resShrink$baseMean,
 #   a = resShrink$log2FoldChange,
 #   c = ifelse(abs(resShrink$log2FoldChange) >= lfc_cut & resShrink$padj <= FDR_cut, TRUE, FALSE)),
-#   ylim=c(-4,4), 
+#   ylim=c(-4,4),
 #   main = "MA plot with apeglm shrunken LFC"
 # )
 
-par(op)
-dev.off()
+# par(op)
+# dev.off()
 
 
 ###########################################################################
@@ -280,10 +380,12 @@ resultTable <- dplyr::left_join(
 ## get the sample names for each condition under comparison
 grp1 <- sapply(rownames(exptInfo[exptInfo$condition %in% compare[1], ]), FUN = as.name, USE.NAMES = F, simplify = T)
 name1 <- paste(compare[1], "_meanCount", sep = "")
+# name1 <- "condition1_meanCount"
 grp1Len <- length(grp1)
 
 grp2 <- sapply(rownames(exptInfo[exptInfo$condition %in% compare[2], ]), FUN = as.name, USE.NAMES = F, simplify = T)
 name2 <- paste(compare[2], "_meanCount", sep = "")
+# name2 <- "condition2_meanCount"
 grp2Len <- length(grp2)
 
 
@@ -291,18 +393,19 @@ resNormCounts <- normCounts %>%
   dplyr::select(geneId, !!!c(grp1, grp2)) %>%
   rowwise() %>%
   mutate(!!name1 := sum(!!!grp1) / !!grp1Len,
-         !!name2 := sum(!!!grp2) / !!grp2Len)
+         !!name2 := sum(!!!grp2) / !!grp2Len) 
+
 
 
 ## validate
 # as.data.frame(rowMeans(head(resNormCounts)[,grp1]), col.names = c("grp1_mean"))
 
 
-selCols <- colnames(geneSym)[colnames(geneSym) != "geneId"]
+selCols <- colnames(geneInfo)[colnames(geneInfo) != "geneId"]
 
 diffData <- resultTable %>% 
   left_join(y = resNormCounts, by = "geneId") %>% 
-  left_join(y = geneSym, by = c("geneId" = "geneId")) %>%
+  left_join(y = geneInfo, by = c("geneId" = "geneId")) %>%
   mutate(
     diff_l2fc = dplyr::case_when(
       padj < FDR_cut & log2FoldChange >= up_cut ~ "up",
@@ -314,22 +417,22 @@ diffData <- resultTable %>%
       padj < FDR_cut & shrinkLog2FC <= down_cut ~ "down",
       TRUE ~ "noDEG"
     )
-  ) %>% 
-  dplyr::select(geneId, contrast, ends_with("_meanCount"), log2FoldChange, shrinkLog2FC,
-                pvalue, padj, diff_l2fc, diff_shrink_l2fc, !!!selCols)
+  )
 
 
 head(diffData)
 
+degData <- diffData %>%
+  dplyr::select(
+  geneId, contrast, ends_with("_meanCount"), log2FoldChange,
+  shrinkLog2FC, pvalue, padj, diff_l2fc, diff_shrink_l2fc, !!!selCols)
 
-significant <- filter(diffData, padj < FDR_cut, log2FoldChange >= up_cut | log2FoldChange <= down_cut)
 
-significant_up <- filter(diffData, padj < FDR_cut, log2FoldChange >= up_cut)
-significant_down <- filter(diffData, padj < FDR_cut, log2FoldChange <= down_cut)
-
+significant_up <- filter(degData, padj < FDR_cut, log2FoldChange >= up_cut)
+significant_down <- filter(degData, padj < FDR_cut, log2FoldChange <= down_cut)
 
 readr::write_tsv(x = resShrinkDf, path = paste(outPrefix, ".DESeq2.tab", sep = ""))
-readr::write_tsv(x = diffData, path = paste(outPrefix, ".DEG_all.txt", sep = ""))
+readr::write_tsv(x = degData, path = paste(outPrefix, ".DEG_all.txt", sep = ""))
 
 
 ###########################################################################
@@ -341,24 +444,125 @@ markGenes <- c()
 # tmpDf = filter(diffData, geneName %in% markGenes)
 
 plotTitle <- paste("Volcano plot:", compare[1], "vs", compare[2], sep = " ")
-p2 <- volcano_plot(df = diffData, 
-                   title = plotTitle, 
-                   fdr_col = "padj", 
-                   lfc_col = "shrinkLog2FC", 
+p2 <- volcano_plot(df = diffData,
+                   title = plotTitle,
+                   fdr_col = "padj",
+                   lfc_col = "log2FoldChange",
                    fdr_cut = FDR_cut, lfc_cut = lfc_cut,
                    geneOfInterest = markGenes,
-                   ylimit = 15, xlimit = c(-5, 5))
+                   ylimit = 100, xlimit = c(-7, 7))
 
-# png(filename = paste(outPrefix, "_volcano.png", sep = ""), width = 3000, height = 3000, res = 230)
-pdf(file = paste(outPrefix, ".volcano.pdf", sep = ""), width = 8, height = 10)
+png(filename = paste(outPrefix, ".volcano.png", sep = ""), width = 2500, height = 3000, res = 280)
 plot(p2$plot)
 dev.off()
 
+###########################################################################
+
+# plot all data in single PDF file
+
+pdf(file = paste(outPrefix, ".summary_plots.pdf", sep = ""), width = 10, height = 10, onefile = TRUE)
+
+## PCA
+plot(pcaPlot)
+
+## distance heatmap
+draw(plot_dist,
+     padding = unit(rep(0.5, 4), "cm")
+)
+
+## MA plots
+op <- par(mfrow = c(2, 1))
+plotMA(
+  object = res,
+  ylim=c(-4,4),
+  main = paste("MA plot with unshrunken LFC:", compare[1], "vs", compare[2])
+)
+
+plotMA(
+  object = resShrink,
+  ylim=c(-4,4),
+  main = paste("MA plot with shrunken LFC:", compare[1], "vs", compare[2])
+)
+
+par(op)
+
+## volcano plot
+plot(p2$plot)
+
+## p-value distribution plots
+plot(pqDensity)
+plot(lfcFreq)
+
+dev.off()
 
 ###########################################################################
 
+## heatmap of normalized read counts
+significant <- filter(diffData, padj < FDR_cut, log2FoldChange >= up_cut | log2FoldChange <= down_cut)
+
+## rld z-score heatmap
+geneCounts <- significant %>% 
+  dplyr::select(geneId, !!!c(grp1, grp2)) %>%
+  dplyr::distinct() %>% 
+  column_to_rownames(var = "geneId")
+
+countMat <- data.matrix(geneCounts)
+
+countZscoreMat <- chipmine::scale_matrix_rows(x = countMat)
+
+## plot main rld score heatmap
+countHeatmap <- Heatmap(
+  countZscoreMat,
+  name = "count_heatmap",
+  col = colorRamp2(breaks = c(min(countZscoreMat), 0, max(countZscoreMat)),
+                   colors = c("green", "black", "red"), space = "LAB"),
+  show_row_names = FALSE,
+  column_names_gp = gpar(fontsize = 14), 
+  cluster_columns = FALSE, 
+  width = unit(10, "cm"), row_names_max_width = unit(15, "cm"), 
+  heatmap_legend_param = list(title = "z-score(normalized read count)", color_bar = "continuous")
+) 
 
 
+## fold change heatmap
+foldChangeDf <- dplyr::select(significant, geneId, log2FoldChange) %>%
+  dplyr::distinct() %>% 
+  tibble::column_to_rownames(var = "geneId")
+
+if(all(rownames(geneCounts) != rownames(foldChangeDf))){
+  stop("gene order does not match")
+}
+
+foldChangeMat <- data.matrix(foldChangeDf)
+
+
+fcHeatmap <- Heatmap(matrix = foldChangeMat,
+                     name = "lfc_heatmap",
+                     col = colorRamp2(breaks = c(-3, 0, 3), colors = c("blue", "white", "red"), space = "LAB"),
+                     cluster_rows = TRUE,
+                     clustering_distance_rows = "euclidean",
+                     cluster_columns = TRUE,
+                     show_row_names = FALSE,
+                     column_names_gp = gpar(fontsize = 14), 
+                     width = unit(2, "cm"),
+                     heatmap_legend_param = list(title = "\nlog2(fold_change)")
+)
+
+htList <- countHeatmap + fcHeatmap
+
+pdf(file = paste(outPrefix, ".normCount_heatmap.pdf", sep = ""), width = 10, height = 12, onefile = TRUE)
+
+draw(object = htList,
+     main_heatmap = "lfc_heatmap",
+     column_title = paste("Normalized read counts heatmap:", analysisName),
+     row_title = "Genes",
+     row_dend_side = "left",
+     column_title_gp = gpar(fontsize = 14, fontface = "bold")
+)
+
+dev.off()
+
+###########################################################################
 
 
 
