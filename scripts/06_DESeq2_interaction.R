@@ -3,7 +3,7 @@ library(tidyverse)
 library(data.table)
 library(ggrepel)
 library(tximport)
-library(org.AFumigatus293.eg.db)
+library(org.AFumigatus.Af293.eg.db)
 library(here)
 
 ## This script:
@@ -25,7 +25,7 @@ file_geneInfo <- "E:/Chris_UM/Database/A_fumigatus_293_version_s03-m05-r06/A_fum
 # "E:/Chris_UM/Database/C_albicans/SC5314_A21/C_albicans_SC5314_A21.info.tab"
 # "E:/Chris_UM/Database/A_fumigatus_293_version_s03-m05-r06/A_fumigatus_Af293_version_s03-m05-r09_geneInfo.tab"
 
-orgDb <- org.AFumigatus293.eg.db
+orgDb <- org.AFumigatus.Af293.eg.db
 if(!dir.exists(outDir)){
   dir.create(path = outDir)
 }

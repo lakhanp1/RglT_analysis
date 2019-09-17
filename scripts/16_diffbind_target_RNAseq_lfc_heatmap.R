@@ -1,6 +1,6 @@
 library(chipmine)
 library(ComplexHeatmap)
-library(org.AFumigatus293.eg.db)
+library(org.AFumigatus.Af293.eg.db)
 
 rm(list = ls())
 
@@ -11,7 +11,7 @@ if(!dir.exists(outDir)){
 }
 
 ##################################################################################
-orgDb <- org.AFumigatus293.eg.db
+orgDb <- org.AFumigatus.Af293.eg.db
 
 file_diffbindTargets <- here::here("analysis", "02_ChIPseq_analysis",
                                    "01_peak_targets", "diffbind_allPeak_targets.tab")
@@ -26,13 +26,12 @@ diffbindCompare <- c("CREEHA_CONTROL", "CREEHA_10MMAA")
 
 ## "CEA17_AA_CEA17_C", "X5A9_AA_X5A9_C", "X5A9_C_CEA17_C", "X5A9_AA_CEA17_AA"
 
-# degResultIds <- c("CEA17_AA_vs_CEA17_C", "5A9_AA_vs_5A9_C")
 # select_only_degs <- FALSE
-analysisName <- "5A9_vs_CEA17"
-degResultIds <- c("X5A9_C_CEA17_C", "X5A9_AA_CEA17_AA")
-select_only_degs <- TRUE
+analysisName <- "all_edgeR_DEGs"
+degResultIds <- c("CEA17_AA_CEA17_C", "X5A9_AA_X5A9_C", "X5A9_C_CEA17_C", "X5A9_AA_CEA17_AA")
+select_only_degs <- FALSE
 
-outPrefix <- paste(outDir, "/", analysisName, ".goodPeaks",  sep = "")
+outPrefix <- paste(outDir, "/", analysisName, ".DiffBind_peaks",  sep = "")
 
 file_rnaseq <- here::here("analysis", "01_RNAseq_data", "RNAseq_edgeR_all.txt")
 
@@ -106,6 +105,13 @@ degTable <- data.table::dcast(
 ) %>% 
   as_tibble()
 
+degCols <- c(
+  "GeneID",
+  unlist(lapply(X = levels(degData$Contrast), FUN = grep, x = names(degTable), value = TRUE))
+)
+
+degTable <- dplyr::select(degTable, degCols)
+
 # ## function to extract the log2FoldChange, padj and diff coulumns for each DEG result file
 # get_foldchange <- function(degFile, name){
 #   
@@ -144,8 +150,8 @@ degTable <- data.table::dcast(
 
 ##################################################################################
 
-mergedData <- dplyr::left_join(x = targetSet, y = geneSym, by = c("geneId" = "geneId")) %>% 
-  dplyr::left_join(y = degTable, by = c("geneId" = "GeneID"))
+mergedData <- dplyr::full_join(x = targetSet, y = degTable, by = c("geneId" = "GeneID")) %>% 
+  dplyr::left_join(y = geneSym, by = c("geneId" = "geneId"))
 
 ## optionally select only those genes which are DEGs as per RNAseq
 if(select_only_degs){
@@ -156,12 +162,12 @@ if(select_only_degs){
 readr::write_tsv(x = mergedData, path = paste(outPrefix, ".data.tab", sep = ""))
 
 
-
 ##################################################################################
 ## plotting
 
 ## select best peak for a gene which has multiple peaks
 plotData <- mergedData %>% 
+  dplyr::filter(!is.na(DiffBind_region)) %>% 
   dplyr::mutate(
     minPeakDist = pmin(abs(!!as.name(tfCols$peakDist[tf1Id])),
                        abs(!!as.name(tfCols$peakDist[tf2Id])),

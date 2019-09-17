@@ -1,5 +1,5 @@
 library(regioneR)
-library(org.AFumigatus293.eg.db)
+library(org.AFumigatus.Af293.eg.db)
 library(TxDb.Afumigatus.Af293.AspGD.GFF)
 library(BSgenome.Afumigatus.AspGD.Af293)
 library(Biostrings)
@@ -19,7 +19,7 @@ outPrefix <- paste(outDir, "/", "gliZ_cluster_promoters", sep = "")
 
 txdb <- TxDb.Afumigatus.Af293.AspGD.GFF
 genome <- BSgenome.Afumigatus.AspGD.Af293
-orgDb <- org.AFumigatus293.eg.db
+orgDb <- org.AFumigatus.Af293.eg.db
 ##################################################################################
 
 cdsGrl <- cdsBy(x = txdb, by = "gene")

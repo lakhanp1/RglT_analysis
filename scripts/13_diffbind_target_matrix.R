@@ -2,7 +2,7 @@ library(chipmine)
 library(here)
 library(BSgenome.Afumigatus.AspGD.Af293)
 library(data.table)
-library(org.AFumigatus293.eg.db)
+library(org.AFumigatus.Af293.eg.db)
 library(TxDb.Afumigatus.Af293.AspGD.GFF)
 
 ## this script
@@ -30,7 +30,7 @@ TF_dataPath <- here::here("data", "TF_data")
 
 sampleInfo <- suppressMessages(readr::read_tsv(file = file_diffbindInfo))
 
-orgDb <- org.AFumigatus293.eg.db
+orgDb <- org.AFumigatus.Af293.eg.db
 txDb <- TxDb.Afumigatus.Af293.AspGD.GFF
 
 ## get the sample details

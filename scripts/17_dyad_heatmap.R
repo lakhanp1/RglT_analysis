@@ -1,5 +1,5 @@
 library(chipmine)
-library(org.AFumigatus293.eg.db)
+library(org.AFumigatus.Af293.eg.db)
 library(seriation)
 
 
@@ -13,7 +13,7 @@ if(!dir.exists(outDir)){
 
 outPrefix <- paste(outDir, "/diad_motif_occurrence.all200", sep = "")
 ##################################################################################
-orgDb <- org.AFumigatus293.eg.db
+orgDb <- org.AFumigatus.Af293.eg.db
 
 file_diadMatch <- here::here("analysis", "ChIPseq_analysis", "motifAnalysis", "rsat_diad_creE_CONTROL_10MMAA_combined",
                              "creE_CONTROL_10MMAA_combined.diad_match.tab")

@@ -4,7 +4,7 @@ library(tidyverse)
 library(RColorBrewer)
 library(data.table)
 library(here)
-library(org.AFumigatus293.eg.db)
+library(org.AFumigatus.Af293.eg.db)
 
 ##
 ## This script plots the 
@@ -36,7 +36,7 @@ degResults <-  c("CEA17_AA_vs_CEA17_C", "5A9_AA_vs_5A9_C",
 samples <- c()
 plotTitle <- "all DEG comparison"
 
-orgDb <- org.AFumigatus293.eg.db
+orgDb <- org.AFumigatus.Af293.eg.db
 
 FDR_cut <- 0.05
 lfc_cut <- 0.585

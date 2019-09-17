@@ -1,5 +1,5 @@
 library(chipmine)
-library(org.AFumigatus293.eg.db)
+library(org.AFumigatus.Af293.eg.db)
 library(BSgenome.Afumigatus.AspGD.Af293)
 library(DiffBind)
 
@@ -11,7 +11,7 @@ library(DiffBind)
 
 rm(list = ls())
 
-outDir <- here::here("analysis", "ChIPseq_analysis", "diffBind")
+outDir <- here::here("analysis", "02_ChIPseq_analysis", "03_diffBind")
 
 if(!dir.exists(outDir)){
   dir.create(path = outDir)
@@ -27,9 +27,9 @@ lfc_cut <- 1
 up_cut <- lfc_cut
 down_cut <- lfc_cut * -1
 ##################################################################################
-orgDb <- org.AFumigatus293.eg.db
+orgDb <- org.AFumigatus.Af293.eg.db
 
-file_diffbindInfo <- here::here("analysis", "ChIPseq_analysis", "diffBind", "sampleInfo.txt")
+file_diffbindInfo <- here::here("analysis", "02_ChIPseq_analysis", "03_diffBind", "sampleInfo.txt")
 file_exptInfo <- here::here("data", "referenceData/sampleInfo.txt")
 
 TF_dataPath <- here::here("data", "TF_data")
@@ -41,7 +41,7 @@ sampleInfo <- suppressMessages(readr::read_tsv(file = file_diffbindInfo))
 exptData <- get_sample_information(exptInfoFile = file_exptInfo,
                                    samples = sampleInfo$SampleID,
                                    dataPath = TF_dataPath,
-                                   matrixSource = "normalizedmatrix")
+                                   profileMatrixSuffix = "normalizedmatrix")
 
 exptDataList <- purrr::transpose(exptData) %>%
   purrr::set_names(nm = purrr::map(., "sampleId"))

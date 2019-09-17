@@ -1,6 +1,6 @@
 library(chipmine)
 library(ComplexHeatmap)
-library(org.AFumigatus293.eg.db)
+library(org.AFumigatus.Af293.eg.db)
 
 rm(list = ls())
 
@@ -11,7 +11,7 @@ if(!dir.exists(outDir)){
 }
 
 ##################################################################################
-orgDb <- org.AFumigatus293.eg.db
+orgDb <- org.AFumigatus.Af293.eg.db
 
 file_diffbindTargets <- here::here("analysis", "ChIPseq_analysis",
                                    "peak_targets", "diffbind_allPeak_targets.tab")

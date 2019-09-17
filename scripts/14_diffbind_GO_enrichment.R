@@ -1,5 +1,5 @@
 library(chipmine)
-library(org.AFumigatus293.eg.db)
+library(org.AFumigatus.Af293.eg.db)
 library(cowplot)
 
 rm(list = ls())
@@ -26,7 +26,7 @@ TF_dataPath <- here::here("data", "TF_data")
 sampleList <- c("CREEHA_CONTROL4", "CREEHA_CONTROL5", "CREEHA_10MMAA4", "CREEHA_10MMAA5")
 file_diffbindTargets <- here::here("analysis", "02_ChIPseq_analysis",
                                    "01_peak_targets", "diffbind_allPeak_targets.tab")
-orgDb <- org.AFumigatus293.eg.db
+orgDb <- org.AFumigatus.Af293.eg.db
 
 ##################################################################################
 

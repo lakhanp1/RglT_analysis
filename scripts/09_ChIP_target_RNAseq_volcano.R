@@ -1,5 +1,5 @@
 library(chipmine)
-library(org.AFumigatus293.eg.db)
+library(org.AFumigatus.Af293.eg.db)
 library(ggpubr)
 library(ggrepel)
 library(cowplot)
@@ -25,7 +25,7 @@ if(!dir.exists(outDir)){
 
 outPrefix <- paste(outDir, analysisName, sep = "/")
 
-orgDb <- org.AFumigatus293.eg.db
+orgDb <- org.AFumigatus.Af293.eg.db
 file_goMap <- "E:/Chris_UM/Database/A_fumigatus_293_version_s03-m05-r06/A_fumigatus_Af293_orgDb/geneid2go.AFumigatus_Af293.topGO.map"
 
 ##################################################################################
