@@ -20,7 +20,7 @@ source("E:/Chris_UM/GitHub/omics_util/02_RNAseq_scripts/s02_DESeq2_functions.R")
 
 ###########################################################################
 
-degResult <- "5A9_AA_vs_5A9_C"
+degResult <- "CEA17_AA_vs_CEA17_C"
 
 file_RNAseq_info <- here::here("data", "RNAseq_info.txt")
 diffDataPath <- here::here("analysis", "01_RNAseq_data")
@@ -33,10 +33,11 @@ outPrefix <- paste(outDir, "/", degResult, sep = "")
 orgDb <- org.AFumigatus.Af293.eg.db
 keggOrg <- 'afm'
 keggIdCol <- "KEGG_ID"
+lfcCol <- "log2FoldChange"
 file_topGO <- "E:/Chris_UM/Database/A_fumigatus_293_version_s03-m05-r06/annotation_resources/geneid2go.AFumigatus_Af293.topGO.map"
 
 cutoff_qval <- 0.05
-cutoff_lfc <- 0.585
+cutoff_lfc <- 1
 cutoff_up <- cutoff_lfc
 cutoff_down <- -1 * cutoff_lfc
 
@@ -60,9 +61,9 @@ if(! keggIdCol %in% colnames(degs)){
   
   degs <- dplyr::left_join(x = degs, y = keggInfo, by = "geneId")
 }
-  
-downDegs <- dplyr::filter(degs, padj <= cutoff_qval & shrinkLog2FC <= cutoff_down)
-upDegs <- dplyr::filter(degs, padj <= cutoff_qval & shrinkLog2FC >= cutoff_up)
+
+downDegs <- dplyr::filter(degs, padj <= cutoff_qval & !!sym(lfcCol) <= cutoff_down)
+upDegs <- dplyr::filter(degs, padj <= cutoff_qval & !!sym(lfcCol) >= cutoff_up)
 
 contrast <- unique(upDegs$contrast)
 
@@ -322,7 +323,5 @@ setColumnWidth(object = exc, sheet = 1:2, column = 2, width = c(13000))
 
 xlcFreeMemory()
 saveWorkbook(exc)
-
-
 
 

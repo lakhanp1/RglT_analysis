@@ -56,7 +56,7 @@ tfCols <- sapply(
 )
 
 diffbindTargets <- suppressMessages(readr::read_tsv(file = file_diffbindTargets, col_names = T))
-diffbindTargets <- dplyr::filter(diffbindTargets, pvalFilteredN > 0)
+diffbindTargets <- dplyr::filter(diffbindTargets, pvalGood.all > 0)
 
 dplyr::group_by(diffbindTargets, categoryDiffbind) %>% 
   dplyr::summarise(n = n())

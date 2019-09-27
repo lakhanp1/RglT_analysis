@@ -57,7 +57,7 @@ tfCols <- sapply(
   simplify = F, USE.NAMES = T
 )
 
-geneStrands <- as.data.frame(genes(txDb), row.names = NULL) %>% 
+geneStrands <- as.data.frame(GenomicFeatures::genes(x = txDb), row.names = NULL) %>% 
   dplyr::select(geneId = gene_id, strand)
 
 geneInfo <- AnnotationDbi::select(x = orgDb, keys = keys(orgDb), columns = "DESCRIPTION") %>% 
@@ -75,8 +75,7 @@ diffbindAnn <- suppressMessages(readr::read_tsv(file = file_diffbindAnn, col_nam
                 DiffBind.pvalue = p.value,
                 DiffBind.FDR = FDR)
 
-# diffbindAnn <- dplyr::filter(diffbindAnn, pvalFilteredN > 0)
-peakStats <- dplyr::filter(diffbindAnn, pvalFilteredN > 0) %>% 
+peakStats <- dplyr::filter(diffbindAnn, pvalGood.all > 0) %>% 
   dplyr::mutate(peakGene = paste(name, geneId, sep = "::")) %>% 
   dplyr::group_by(categoryDiffbind) %>% 
   dplyr::summarise(count = n_distinct(name))
@@ -134,14 +133,14 @@ targetMat <- diffbindAnn %>%
   dplyr::left_join(y = tf1SummitSeq, by = structure("name", names = tfCols$peakId[bestGrp1Id])) %>%
   dplyr::left_join(y = tf2SummitSeq, by = structure("name", names = tfCols$peakId[bestGrp2Id])) %>%
   dplyr::select(geneId, name, DiffBind_region, DiffBind.foldChange, DiffBind.pvalue, DiffBind.FDR,
-                peakPosition, diffBind, peakOccupancy, categoryDiffbind, pvalFilteredN,
-                starts_with("peakCall."),
+                peakPosition, diffBind, peakOccupancy, categoryDiffbind, 
+                starts_with("peakCall."), starts_with("pvalGood."),
                 starts_with("hasPeak."), starts_with("peakPval."), starts_with("peakId."),
                 starts_with("summitSeq."), starts_with("summitRegion."),
-                starts_with("peakType."), starts_with("peakDist."), bestPval) %>% 
+                starts_with("peakType."), starts_with("peakDist.")) %>% 
   dplyr::select(geneId, name, DiffBind_region, DiffBind.foldChange, DiffBind.pvalue, DiffBind.FDR,
                 peakPosition, diffBind, peakOccupancy, categoryDiffbind, starts_with("peakCall."),
-                contains(bestGrp1Id), contains(bestGrp2Id), pvalFilteredN, bestPval)
+                contains(bestGrp1Id), contains(bestGrp2Id), starts_with("pvalGood."))
 
 targetMat <- dplyr::left_join(x = targetMat, y = geneInfo, by = "geneId")
 
@@ -149,7 +148,7 @@ readr::write_tsv(x = targetMat, path = paste(outPrefix, "diffbind_allPeak_target
 
 ##################################################################################
 ## get individual peak target gene
-peakAnnotation <- suppressMessages(readr::read_tsv(file = file_diffbindRes, col_names = T)) %>% 
+peakAnnotation <- suppressMessages(readr::read_tsv(file = file_diffbindAnn, col_names = T)) %>% 
   dplyr::select(starts_with("peakId."), geneId, peakPosition) %>% 
   dplyr::filter(!is.na(geneId)) %>% 
   as.data.table() %>% 
@@ -163,12 +162,24 @@ peakAnnotation <- suppressMessages(readr::read_tsv(file = file_diffbindRes, col_
   dplyr::select(-sampleId)
 
 ## get diffbind results
-diffbindRes <- suppressMessages(readr::read_tsv(file = file_diffbindRes, col_names = T)) %>% 
-  dplyr::select(name, diffBind, peakOccupancy, categoryDiffbind, pvalFilteredN,
+diffbindRes <- suppressMessages(readr::read_tsv(file = file_diffbindAnn, col_names = T)) %>% 
+  dplyr::select(name, diffBind, peakOccupancy, categoryDiffbind, starts_with("pvalGood."),
                 starts_with("peakId."), starts_with("peakPval."), starts_with("pvalFiltered.")) %>% 
   dplyr::left_join(y = tf1SummitSeq, by = structure("name", names = tfCols$peakId[bestGrp1Id])) %>%
   dplyr::left_join(y = tf2SummitSeq, by = structure("name", names = tfCols$peakId[bestGrp2Id])) %>% 
   dplyr::distinct()
+
+diffbindRes <- diffbindRes %>% 
+    dplyr::mutate(
+      !! sym(tfCols$pvalFiltered[bestGrp1Id]) := if_else(
+        condition = !! sym(tfCols$peakPval[bestGrp1Id]) >= exptDataList[[bestGrp1Id]]$pval_cutoff,
+        true = TRUE, false = FALSE
+      ),
+      !! sym(tfCols$pvalFiltered[bestGrp2Id]) := if_else(
+        condition = !! sym(tfCols$peakPval[bestGrp2Id]) >= exptDataList[[bestGrp2Id]]$pval_cutoff,
+        true = TRUE, false = FALSE
+      )
+    )
 
 longTargetDf <- data.table::melt.data.table(
   data = as.data.table(diffbindRes),
@@ -188,7 +199,7 @@ peakwiseDiff <- as_tibble(longTargetDf) %>%
 
 summitSeq <- DNAStringSet(x = peakwiseDiff$summitSeq)
 negStrandTargets <- which(peakwiseDiff$strand == "-")
-summitSeq[negStrandTargets] <- reverseComplement(summitSeq[negStrandTargets])
+summitSeq[negStrandTargets] <- Biostrings::reverseComplement(summitSeq[negStrandTargets])
 peakwiseDiff$summitSeqStranded <- as.character(summitSeq, use.names = FALSE)
 
 readr::write_tsv(x = peakwiseDiff, path = paste(outPrefix, "peakwise_diffbind_groups.tab", sep = ""))

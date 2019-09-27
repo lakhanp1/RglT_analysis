@@ -94,7 +94,7 @@ design <- ~ condition
 
 
 ## import raw counts data and run DESeq2
-file_rawCounts <- here::here("analysis", "01_RNAseq_data", "MatrixCountsPerGeneBySample.Reneto.tab")
+file_rawCounts <- here::here("data", "MatrixCountsPerGeneBySample.Reneto.tab")
 
 countsDf <- suppressMessages(readr::read_tsv(file = file_rawCounts, col_names = T)) %>%
   as.data.frame()
@@ -251,6 +251,13 @@ resultSummary <- paste(capture.output(summary(resShrink))[1:8], collapse = "\n")
 
 mcols(resShrink, use.names=TRUE)
 
+
+# readr::write_tsv(x = as.data.frame(mcols(dds)) %>% rownames_to_column(var = "geneId"),
+#                  path = paste(outPrefix, ".mcols_DESeq2.tab", sep = ""))
+# 
+mcols(mcols(dds), use.names=TRUE) %>%
+  as.data.frame() %>%
+  view()
 
 fcDensity <- hist(x = pmin(pmax(res$log2FoldChange, -5), 5),
                   breaks = 50,
