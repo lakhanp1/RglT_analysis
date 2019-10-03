@@ -5,7 +5,7 @@ library(ggpubr)
 
 rm(list = ls())
 
-outDir <- here::here("analysis", "ChIPseq_analysis", "motif_analysis", "combined_results")
+outDir <- here::here("analysis", "02_ChIPseq_analysis", "05_motif_analysis", "02_combined_results")
 
 if(!dir.exists(outDir)){
   dir.create(path = outDir)
@@ -16,14 +16,15 @@ outPrefix <- paste(outDir, "/", analysisName, sep = "")
 
 ##################################################################################
 
-motifAnalysis <- c("CREEHA_CONTROL_enriched" = "CREEHA_CONTROL_enriched",
-                   "creE_common" = "CONTROL_10MMAA_common",
-                   "CREEHA_10MMAA_enriched" = "CREEHA_10MMAA_enriched")
+motifAnalysis <- c("CONTROL_enriched" = "02_CREEHA_CONTROL_enriched",
+                   "common" = "04_CONTROL_10MMAA_common",
+                   # "combined" = "01_creE_combined",
+                   "AA_enriched" = "02_CREEHA_10MMAA_enriched")
 
 sampleInfo <- purrr::map_dfr(
   .x = motifAnalysis,
   .f = function(x){
-    positionAnalysisDir <- here::here("analysis", "ChIPseq_analysis", "motif_analysis", x)
+    positionAnalysisDir <- here::here("analysis", "02_ChIPseq_analysis", "05_motif_analysis", "01_meme", x)
     list(
       motifGroup = x,
       file = paste(positionAnalysisDir, "/dyad_analysis.txt", sep = "")
@@ -53,37 +54,48 @@ for (sampleIndex in 1:nrow(sampleInfo)) {
   }
 }
 
+## add GCC/CCG dyad group
+masterData <- dplyr::mutate(
+  masterData,
+  GC_dyad = dplyr::case_when(
+    grepl(pattern = "gcc", x = pair) & grepl(pattern = "ccg", x = pair) ~ "GCC--CCG",
+    grepl(pattern = "gcc", x = pair) & !grepl(pattern = "ccg", x = pair) ~ "GCC--NNN",
+    grepl(pattern = "ccg", x = pair) & !grepl(pattern = "gcc", x = pair) ~ "CCG--NNN",
+    TRUE ~ "NNN--NNN"
+  )
+)
 
-summary <- dplyr::group_by(masterData, group) %>% 
+summary <- dplyr::group_by(masterData, group, GC_dyad) %>% 
   dplyr::summarise(
-    gcc = length(which(grepl(pattern = "gcc", x = pair) & !grepl(pattern = "ccg", x = pair))),
-    gcc_AND_ccg = length(which(grepl(pattern = "gcc", x = pair) & grepl(pattern = "ccg", x = pair))),
-    ccg = length(which(grepl(pattern = "ccg", x = pair) & !grepl(pattern = "gcc", x = pair))),
-    others = length(which(!grepl(pattern = "ccg|gcc", x = pair))),
-    total = n()
+    count = n(),
+    occ_sum = sum(occ)
+  ) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(
+    groupDesc = dplyr::case_when(
+      group == "AA_enriched" ~ "AA specific\nand\nAA enriched",
+      group == "common" ~ "Common",
+      group == "CONTROL_enriched" ~ "Control specific\nand\nControl enriched"
+    )
   )
 
+summary$group <- factor(summary$group, levels = sampleInfo$id)
+summary$GC_dyad <- factor(summary$GC_dyad, levels = c("GCC--NNN", "GCC--CCG", "CCG--NNN", "NNN--NNN"))
 
-pltData <- data.table::melt(data = as.data.table(summary), measure.vars = c("gcc", "gcc_AND_ccg", "ccg", "others"),
-                 variable.name = "kmer", value.name = "dyadCount") %>% 
-  as.data.frame()
-
-pltData$group <- factor(pltData$group, levels = sampleInfo$id)
-
-pt <- ggplot(data = pltData) +
-  geom_bar(mapping = aes(x = group, y = dyadCount, fill = kmer), stat="identity",
-           position = position_fill(reverse = TRUE)) +
-  ylab("# dyads") +
+pt1 <- ggplot(data = summary) +
+  geom_bar(mapping = aes(x = groupDesc, y = occ_sum, fill = GC_dyad),
+           stat = "identity", position = position_fill(reverse = TRUE)) +
+  labs(y = "dyad pair occurrence in RglT summit sequences") +
   coord_flip() +
+  scale_y_continuous(labels = scales::percent) +
   scale_fill_manual(
     name = "3mer dyad",
-    values = c("gcc" = "#377eb8", "gcc_AND_ccg" = "#984ea3", "ccg" = "#4daf4a", "others" = "#999999"),
-    breaks = c("gcc", "gcc_AND_ccg", "ccg", "others"),
-    labels = c("GCC--NNN", "GCC--CCG", "CCG--NNN", "NNN--NNN")
+    values = c("GCC--NNN" = "#377eb8", "GCC--CCG" = "#984ea3", "CCG--NNN" = "#4daf4a", "NNN--NNN" = "#999999"),
+    breaks = c("GCC--NNN", "GCC--CCG", "CCG--NNN", "NNN--NNN")
   ) +
   theme_bw() +
   theme(
-    axis.text = element_text(size = 20),
+    axis.text = element_text(size = 20, hjust = 0.5),
     axis.title.y = element_blank(),
     axis.title.x = element_text(size = 16),
     legend.key.size = unit(1, "cm"),
@@ -94,8 +106,8 @@ pt <- ggplot(data = pltData) +
     panel.grid = element_blank()
   )
 
-png(filename = paste(outPrefix, ".count_barplot.png", sep = ""), width = 2000, height = 500, res = 150)
-plot(pt)
+png(filename = paste(outPrefix, ".count_barplot.png", sep = ""), width = 2000, height = 600, res = 150)
+plot(pt1)
 dev.off()
 
 
