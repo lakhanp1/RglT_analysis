@@ -7,54 +7,14 @@ bowtie2 -p 6 --local  -x <bt2-idx> -U <> | samtools view -bS - | samtools sort  
 for i in `cat sample_AFumigatus.list`
 do
 cd $i
-printf "\nsamtools index %s_bt2.bam\n" $i >> generalJob.sh
-printf "samtools flagstat %s_bt2.bam > alignment.stats\n\n" $i >> generalJob.sh
-cd ..
-done
-}
-
-
-test.1:{
-mappedReads=`grep -P ' 0 mapped \(' alignment.stats | grep -P -o '^\d+'`
-scale=`perl -e "printf('%.3f', 1000000/$mappedReads)"`
-
-##macs2 pileup with 200bp extension
-macs2 pileup --extsize 200 -i SAMPLE_ID_bt2.bam -o SAMPLE_ID_pileup.bdg
-error_exit $?
-
-##normalize
-printf "Normalizing SAMPLE_ID_pileup.bdg with factor %s\n" $scale
-macs2 bdgopt -i SAMPLE_ID_pileup.bdg -m multiply -p $scale -o temp_normalized.bdg
-error_exit $?
-
-##Remove the first line
-sed -n '2,$p' temp_normalized.bdg > SAMPLE_ID_normalized.bdg
-error_exit $?
-rm temp_normalized.bdg
-
-}
-
-
-##Replace SAMPLE_ID with $i
-for i in `cat sample_AFumigatus.list`; do cd $i; sed "s/SAMPLE_ID/$i/g" ../test.1 >> generalJob.sh; cd ..; done
-
-
-#sort the bdg file by bedSort
-{
-for i in `cat sample_AFumigatus.list`
-do
-cd $i
-printf "##bedSort and bedGraph to bigWig conversion
-bedSort %s_normalized.bdg %s_normalized.bdg\n" $i $i >> generalJob.sh
-printf "bedGraphToBigWig %s_normalized.bdg /home/lakhanp/database/A_fumigatus/Af293_version_s03-m05-r06/reference/genome.size %s_normalized.bw
-error_exit \$? \n\n" $i $i >> generalJob.sh
+bash /home/lakhanp/scripts/ChIPseq_scripts/template_ChIPseq_config.sh -c /home/lakhanp/database/reference_genomes.yaml -o A_fumigatus_Af293 >> generalJob.sh
+sed "s/SAMPLE_ID/$i/g" /home/lakhanp/scripts/ChIPseq_scripts/template_ChIPseq_process.sh >> generalJob.sh
 cd ..
 done
 }
 
 
 for i in `cat sample_AFumigatus.list`; do cd $i; sbatch -J $i generalJob.sh; cd ..; done
-
 
 ## Print control information and bindingtype information to generalJob.sh
 {
@@ -63,30 +23,15 @@ for i in `cat sample_AFumigatus.list`; do cd $i; sbatch -J $i generalJob.sh; cd 
 }
 
 
-## MACS2 peak calling
+## MACS2 peak calling: use template
 {
 for i in `cat sample_tf_macs2.list`
-do
-cd $i
-printf "##macs2 normal peak calling: with control
-macs2 callpeak -t %s_bt2.bam -c \$control --name %s.withCtrl --outdir macs2_withCtrl_narrow -g 29e6 --nomodel --extsize 200
-error_exit \$? \n\n" $i $i >> generalJob.sh
+do cd $i
+sed "s/SAMPLE_ID/$i/g" /home/lakhanp/scripts/ChIPseq_scripts/template_ChIPseq_macs2.sh >> generalJob.sh
 cd ..
 done
 }
 
-
-## Find the nearest gene for each narrowPeak
-{
-for i in `cat sample_tf_macs2.list`
-do
-cd $i
-printf "##Find the nearest CDS start for each narrowPeak
-bedtools closest -nonamecheck -k 5 -t all -D b -id -a macs2_withCtrl_narrow/%s.withCtrl_peaks.narrowPeak -b /home/lakhanp/database/A_fumigatus/Af293_version_s03-m05-r06/annotation/A_fumigatus_Af293_version_s03-m05-r06_CDS_Unique.bed | perl /home/lakhanp/scripts/ChIP_seq/bedtoolsClosestPeakAnnotate.pl  --peakFormat narrowPeak --bedFile /home/lakhanp/database/A_fumigatus/Af293_version_s03-m05-r06/annotation/A_fumigatus_Af293_version_s03-m05-r06_CDS_Unique.bed.gz > macs2_withCtrl_narrow/%s.withCtrl.narrowPeak.nearestCDS.tab
-error_exit \$?\n\n" $i $i >> generalJob.sh
-cd ..
-done
-}
 
 
 ## run TF_binding_matrix.R

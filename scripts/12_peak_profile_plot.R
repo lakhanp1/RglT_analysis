@@ -195,13 +195,32 @@ peakDiffAn$cluster <- factor(
 # ## for the first time, generate profile matrices.
 # ## next time these matrices can be directly imported
 # for(i in 1:nrow(exptData)){
-#   mat <- bigwig_profile_matrix(bwFile = exptData$bwFile[i],
-#                                regions = peakCenterGr,
-#                                signalName = exptData$sampleId[i],
-#                                storeLocal = TRUE, localPath = exptData$matFile[i],
-#                                extend = c(1000, 1000), targetName = "peak center")
+#   mat <- bigwig_profile_matrix(
+#     bwFile = exptData$bwFile[i],
+#     regions = peakCenterGr,
+#     signalName = exptData$sampleId[i],
+#     storeLocal = TRUE, localPath = exptData$matFile[i],
+#     extend = c(1000, 1000), targetName = "peak center")
 # }
 
+exptData_tf <- exptData[c(grp1Index, grp2Index), ] %>% 
+  dplyr::mutate(
+    matFile = stringr::str_replace(
+      string = matFile, pattern = "normalizedmatrix", replacement = "FE_matrix")
+  )
+
+
+# ## FE track profile matrix for TF samples
+# 
+# for(i in 1:nrow(exptData_tf)){
+#   
+#   mat <- bigwig_profile_matrix(
+#     bwFile = exptData_tf$FE_bwFile[i],
+#     regions = peakCenterGr,
+#     signalName = exptData_tf$sampleId[i],
+#     storeLocal = TRUE, localPath = exptData_tf$matFile[i],
+#     extend = c(1000, 1000), targetName = "peak center")
+# }
 
 matList <- import_profiles(exptInfo = exptData, geneList = diffGr$name,
                            source = "normalizedmatrix",
@@ -293,6 +312,71 @@ dev.off()
 
 ##################################################################################
 
+## FE track profile plots
+matList <- import_profiles(exptInfo = exptData_tf, geneList = diffGr$name,
+                           source = "normalizedmatrix",
+                           targetType = "point", targetName = "peak center",
+                           up = 100, target = 0, down = 100)
+
+
+## tf colors
+tfMeanProfile <- NULL
+if(length(exptData_tf$sampleId) == 1){
+  tfMeanProfile <- matList[[exptData_tf$sampleId[1]]]
+} else{
+  tfMeanProfile <- getSignalsFromList(lt = matList[exptData_tf$sampleId])
+}
+
+quantile(tfMeanProfile, c(seq(0, 0.9, by = 0.1), 0.95, 0.99, 0.992, 0.995, 0.999, 0.9999, 1), na.rm = T)
+# tfMeanColor <- colorRamp2(quantile(tfMeanProfile, c(0.50, 0.995), na.rm = T), c("white", "red"))
+tfColorList <- sapply(
+  X = exptData_tf$sampleId,
+  FUN = function(x){
+    return(colorRamp2(breaks = quantile(tfMeanProfile, c(0.50, 0.995), na.rm = T),
+                      colors = unlist(strsplit(x = exptDataList[[x]]$color, split = ",")))
+    )
+  }
+)
+
+# ylimList <- sapply(X = exptData_tf$sampleId, FUN = function(x) c(0, 80), simplify = FALSE)
+ylimList <- list(
+  CREEHA_CONTROL4 = c(0, 5), CREEHA_CONTROL5 = c(0, 5), WT_CONTROL5 = c(0, 5),
+  CREEHA_10MMAA4 = c(0, 5), CREEHA_10MMAA5 = c(0, 5), WT_10MMAA5 = c(0, 5)
+)
+
+profilePlots <- multi_profile_plots(
+  exptInfo = exptData_tf, genesToPlot = diffGr$name,
+  profileColors = tfColorList,
+  showAnnotation = FALSE,
+  targetType = "point",
+  targetName = "summit",
+  matBins = c(100, 0, 100, 10), matSource = "normalizedmatrix",
+  column_title_gp = gpar(fontsize = 12),
+  ylimFraction = ylimList
+)
+
+rowOrd <- order(peakDiffAn$rankMetric)
+
+pdf(file = paste(outPrefix, ".FE_profiles.pdf", sep = ""), width = 12, height = 10)
+# png(file = paste(outPrefix, ".FE_profiles.png", sep = ""), width = 2500, height = 2500, res = 250)
+
+ht <- draw(
+  profilePlots$heatmapList,
+  main_heatmap = exptData_tf$profileName[1],
+  row_order = rowOrd,
+  column_title = "rglT peaks: Fold Enrichment over untagged",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_sub_title_side = "left",
+  heatmap_legend_side = "bottom",
+  gap = unit(7, "mm"),
+  padding = unit(rep(0.5, times = 4), "cm")
+)
+
+dev.off()
+
+
+##################################################################################
+## AA/CONTROL ratio tracks
 
 ## TF1 scalled matrix
 tf1ScalledMat <- scale(x = matList[[bestGrp1Id]], center = TRUE, scale = TRUE)

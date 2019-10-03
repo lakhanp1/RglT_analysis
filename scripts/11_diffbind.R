@@ -329,7 +329,6 @@ readr::write_tsv(x = diffAnn, path = paste(outPrefix, ".all.annotation.tab", sep
 tf1Specific <- dplyr::filter(
   diffAnn,
   !! sym(groupCols$peakCall[grp1]) >= 2 & !! sym(groupCols$peakCall[grp2]) < 2
-  # !is.na(!! sym(tfCols$peakPosition[bestGrp1Id])) 
   ) %>% 
   dplyr::mutate(
     !! tfCols$hasPeak[bestGrp1Id] := TRUE,
@@ -341,7 +340,6 @@ tf1Specific <- dplyr::filter(
 tf2Specific <- dplyr::filter(
   diffAnn,
   !! sym(groupCols$peakCall[grp2]) >= 2 & !! sym(groupCols$peakCall[grp1]) < 2
-  # !is.na(!! sym(tfCols$peakPosition[bestGrp2Id]))
   ) %>% 
   dplyr::mutate(
     !! tfCols$hasPeak[bestGrp1Id] := FALSE,
