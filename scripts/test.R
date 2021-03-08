@@ -15,11 +15,11 @@ lines(lowess(x = 1:length(gc), y= gc, f = 0.10), col = 12, lwd = 2)
 
 
 df <- tibble(
-  pos = 1:8,
   aa = c("P", "H", "D", "I", "S", "F", "U", "N"),
   lp = c(1, 0.2, 0.6, 0.4, 0.6, 0.2, 0.8, 0.7)
 )
 
+df$pos <- 1:nrow(df)
 
 ggplot(data = df, mapping = aes(x = pos, y = 0)) +
   geom_text(mapping = aes(label = aa, size = lp)) +
@@ -31,6 +31,15 @@ ggplot(data = df, mapping = aes(x = pos, y = 0)) +
     axis.title = element_blank(),
     axis.line = element_blank()
   )
+
+
+expand.grid(rep(list(c("A", "T", "G", "C")), 3))
+combn(c("A", "T", "G", "C"), 3)
+unique(t(combn(rep(c("A", "T", "G", "C"), 3),3)))
+
+
+
+
 
 
 

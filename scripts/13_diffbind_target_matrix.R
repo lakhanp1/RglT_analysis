@@ -1,6 +1,6 @@
 library(chipmine)
 library(here)
-library(BSgenome.Afumigatus.AspGD.Af293)
+library(BSgenome.Afumigatus.Af293.AspGD)
 library(data.table)
 library(org.AFumigatus.Af293.eg.db)
 library(TxDb.Afumigatus.Af293.AspGD.GFF)
@@ -32,6 +32,7 @@ sampleInfo <- suppressMessages(readr::read_tsv(file = file_diffbindInfo))
 
 orgDb <- org.AFumigatus.Af293.eg.db
 txDb <- TxDb.Afumigatus.Af293.AspGD.GFF
+genomeDb <- BSgenome.Afumigatus.Af293.AspGD
 
 ## get the sample details
 exptData <- get_sample_information(exptInfoFile = file_exptInfo,
@@ -48,6 +49,11 @@ grp1Enrich = paste(grp1, ":enriched", sep = "")
 grp2Enrich = paste(grp2, ":enriched", sep = "")
 grp1Specific = paste(grp1, ":specific", sep = "")
 grp2Specific = paste(grp2, ":specific", sep = "")
+
+## prepare ChIPseq target data
+bestGrp1Id <- exptData$sampleId[exptData$groupId == grp1 & exptData$bestRep == 1]
+bestGrp2Id <- exptData$sampleId[exptData$groupId == grp2 & exptData$bestRep == 1]
+
 
 tfCols <- sapply(
   X = c("hasPeak", "peakId", "peakEnrichment", "peakPval", "peakQval", "peakSummit", "peakDist", "summitDist",
@@ -71,6 +77,13 @@ geneInfo <- AnnotationDbi::select(x = orgDb, keys = keys(orgDb), columns = "DESC
 
 diffbindAnn <- suppressMessages(readr::read_tsv(file = file_diffbindAnn, col_names = T)) %>% 
   dplyr::mutate(DiffBind_region = paste(seqnames, ":", start, "-", end, sep = "")) %>% 
+  dplyr::mutate(
+    peakAnnotation = if_else(
+      condition = is.na(!!sym(tfCols$peakType[bestGrp1Id])),
+      true = !!sym(tfCols$peakType[bestGrp2Id]),
+      false = !!sym(tfCols$peakType[bestGrp1Id])
+    )
+  ) %>% 
   dplyr::rename(DiffBind.foldChange = Fold,
                 DiffBind.pvalue = p.value,
                 DiffBind.FDR = FDR)
@@ -79,6 +92,7 @@ peakStats <- dplyr::filter(diffbindAnn, pvalGood.all > 0) %>%
   dplyr::mutate(peakGene = paste(name, geneId, sep = "::")) %>% 
   dplyr::group_by(categoryDiffbind) %>% 
   dplyr::summarise(count = n_distinct(name))
+
 
 peakStats$categoryDiffbind <- factor(
   x = peakStats$categoryDiffbind,
@@ -114,32 +128,37 @@ statsPt
 dev.off()
 
 
+dplyr::filter(diffbindAnn, pvalGood.all > 0) %>% 
+  dplyr::select(geneId, name, peakAnnotation, categoryDiffbind) %>% 
+  dplyr::group_by(peakAnnotation) %>% 
+  dplyr::summarise(nGenes = n_distinct(geneId),
+                   nSites = n_distinct(name))
 
-## prepare ChIPseq target data
-bestGrp1Id <- exptData$sampleId[exptData$groupId == grp1 & exptData$bestRep == 1]
-bestGrp2Id <- exptData$sampleId[exptData$groupId == grp2 & exptData$bestRep == 1]
+##################################################################################
 
-tf1SummitSeq <- get_narrowpeak_summit_seq(npFile = exptDataList[[bestGrp1Id]]$peakFile,
-                                          id = exptDataList[[bestGrp1Id]]$sampleId,
-                                          genome = BSgenome.Afumigatus.AspGD.Af293,
-                                          length = summitSeqLen)
+tf1SummitSeq <- get_peak_summit_seq(file = exptDataList[[bestGrp1Id]]$peakFile,
+                                    peakFormat = "narrowPeak",
+                                    sampleId = exptDataList[[bestGrp1Id]]$sampleId,
+                                    genome = genomeDb,
+                                    length = summitSeqLen)
 
-tf2SummitSeq <- get_narrowpeak_summit_seq(npFile = exptDataList[[bestGrp2Id]]$peakFile,
-                                          id = exptDataList[[bestGrp2Id]]$sampleId,
-                                          genome = BSgenome.Afumigatus.AspGD.Af293,
-                                          length = summitSeqLen)
+tf2SummitSeq <- get_peak_summit_seq(file = exptDataList[[bestGrp2Id]]$peakFile,
+                                    peakFormat = "narrowPeak",
+                                    sampleId = exptDataList[[bestGrp2Id]]$sampleId,
+                                    genome = genomeDb,
+                                    length = summitSeqLen)
 
 targetMat <- diffbindAnn %>% 
-  dplyr::left_join(y = tf1SummitSeq, by = structure("name", names = tfCols$peakId[bestGrp1Id])) %>%
-  dplyr::left_join(y = tf2SummitSeq, by = structure("name", names = tfCols$peakId[bestGrp2Id])) %>%
+  dplyr::left_join(y = tf1SummitSeq, by = unname(tfCols$peakId[bestGrp1Id])) %>%
+  dplyr::left_join(y = tf2SummitSeq, by = unname(tfCols$peakId[bestGrp2Id])) %>%
   dplyr::select(geneId, name, DiffBind_region, DiffBind.foldChange, DiffBind.pvalue, DiffBind.FDR,
-                peakPosition, diffBind, peakOccupancy, categoryDiffbind, 
+                peakAnnotation, peakPosition, diffBind, peakOccupancy, categoryDiffbind, 
                 starts_with("peakCall."), starts_with("pvalGood."),
                 starts_with("hasPeak."), starts_with("peakPval."), starts_with("peakId."),
                 starts_with("summitSeq."), starts_with("summitRegion."),
                 starts_with("peakType."), starts_with("peakDist.")) %>% 
   dplyr::select(geneId, name, DiffBind_region, DiffBind.foldChange, DiffBind.pvalue, DiffBind.FDR,
-                peakPosition, diffBind, peakOccupancy, categoryDiffbind, starts_with("peakCall."),
+                peakAnnotation, peakPosition, diffBind, peakOccupancy, categoryDiffbind, starts_with("peakCall."),
                 contains(bestGrp1Id), contains(bestGrp2Id), starts_with("pvalGood."))
 
 targetMat <- dplyr::left_join(x = targetMat, y = geneInfo, by = "geneId")
@@ -170,16 +189,16 @@ diffbindRes <- suppressMessages(readr::read_tsv(file = file_diffbindAnn, col_nam
   dplyr::distinct()
 
 diffbindRes <- diffbindRes %>% 
-    dplyr::mutate(
-      !! sym(tfCols$pvalFiltered[bestGrp1Id]) := if_else(
-        condition = !! sym(tfCols$peakPval[bestGrp1Id]) >= exptDataList[[bestGrp1Id]]$pval_cutoff,
-        true = TRUE, false = FALSE
-      ),
-      !! sym(tfCols$pvalFiltered[bestGrp2Id]) := if_else(
-        condition = !! sym(tfCols$peakPval[bestGrp2Id]) >= exptDataList[[bestGrp2Id]]$pval_cutoff,
-        true = TRUE, false = FALSE
-      )
+  dplyr::mutate(
+    !! sym(tfCols$pvalFiltered[bestGrp1Id]) := if_else(
+      condition = !! sym(tfCols$peakPval[bestGrp1Id]) >= exptDataList[[bestGrp1Id]]$pval_cutoff,
+      true = TRUE, false = FALSE
+    ),
+    !! sym(tfCols$pvalFiltered[bestGrp2Id]) := if_else(
+      condition = !! sym(tfCols$peakPval[bestGrp2Id]) >= exptDataList[[bestGrp2Id]]$pval_cutoff,
+      true = TRUE, false = FALSE
     )
+  )
 
 longTargetDf <- data.table::melt.data.table(
   data = as.data.table(diffbindRes),

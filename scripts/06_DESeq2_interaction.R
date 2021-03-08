@@ -11,12 +11,12 @@ library(here)
 ## perform differential gene expression analysis with interaction terms using DESeq2
 
 rm(list = ls())
-source("E:/Chris_UM/GitHub/omics_util/RNAseq_scripts/DESeq2_functions.R")
+source("E:/Chris_UM/GitHub/omics_util/02_RNAseq_scripts/s02_DESeq2_functions.R")
 
 analysisName <- "creE_del_AA_effect"
 
 outDir <- here::here("analysis", "RNAseq_data", analysisName)
-file_sampleInfo <- here::here("analysis", "RNAseq_data", "sampleInfo.txt")
+file_sampleInfo <- here::here("analysis", "01_RNAseq_data", "sampleInfo.txt")
 
 outPrefix <- paste(outDir, analysisName, sep = "/")
 
